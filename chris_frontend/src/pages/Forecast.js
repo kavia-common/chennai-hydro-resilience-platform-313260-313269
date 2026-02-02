@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCloudRain, faCalendarAlt, faMapPin } from '@fortawesome/free-solid-svg-icons';
+import { faCloudRain, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Alert from '../components/common/Alert';
