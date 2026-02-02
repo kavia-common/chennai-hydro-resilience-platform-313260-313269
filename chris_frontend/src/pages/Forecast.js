@@ -79,8 +79,9 @@ const Forecast = () => {
     }, 1000);
 
     try {
-      // Note: No leading slash, baseURL already includes /api/v1/
-      const response = await api.post('forecast', {
+      // CRITICAL: No leading slash - baseURL is https://host:3001/api/v1
+      // This becomes: https://host:3001/api/v1/forecast
+      const response = await api.post('forecast/', {
         years: parseInt(formData.years),
         include_climate_factors: formData.include_climate_factors,
       }, {
