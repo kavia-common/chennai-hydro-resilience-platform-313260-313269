@@ -28,6 +28,13 @@ export const AuthProvider = ({ children }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Store access token for API calls (optional, as api.js fetches it directly)
+      if (session?.access_token) {
+        sessionStorage.setItem('supabase_access_token', session.access_token);
+      } else {
+        sessionStorage.removeItem('supabase_access_token');
+      }
     });
 
     // Listen for auth changes
@@ -35,6 +42,13 @@ export const AuthProvider = ({ children }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Update stored token on auth state change
+      if (session?.access_token) {
+        sessionStorage.setItem('supabase_access_token', session.access_token);
+      } else {
+        sessionStorage.removeItem('supabase_access_token');
+      }
     });
 
     return () => subscription.unsubscribe();

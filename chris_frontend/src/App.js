@@ -11,6 +11,7 @@ import Forecast from './pages/Forecast';
 import ZoneExplorer from './pages/ZoneExplorer';
 import Reports from './pages/Reports';
 import Loader from './components/common/Loader';
+import ChatBot from './components/common/ChatBot';
 import './App.css';
 
 // PUBLIC_INTERFACE
@@ -108,6 +109,8 @@ function App() {
             />
             <Route path="/" element={<Navigate to="/dashboard" />} />
           </Routes>
+          {/* Global ChatBot overlay - accessible from all authenticated pages */}
+          <ChatBot />
         </div>
       </Router>
     </AuthProvider>

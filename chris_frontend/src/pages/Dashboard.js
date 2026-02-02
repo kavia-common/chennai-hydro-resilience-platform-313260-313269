@@ -32,16 +32,48 @@ const Dashboard = () => {
   ];
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setStats({
-        totalZones: 42,
-        highRiskZones: 8,
-        activeSensors: 156,
-        avgRiskLevel: 62,
-      });
-      setLoading(false);
-    }, 1000);
+    const fetchDashboardData = async () => {
+      try {
+        // Fetch citywide risk data from backend
+        const response = await api.get('/citywide-risk', {
+          params: { limit: 10 }
+        });
+        
+        if (response.data?.success && response.data?.data) {
+          const riskData = response.data.data;
+          const summary = response.data.summary;
+          
+          // Calculate dashboard stats from API data
+          setStats({
+            totalZones: summary?.total_years || riskData.length,
+            highRiskZones: summary?.critical_years?.length + summary?.high_risk_years?.length || 0,
+            activeSensors: 156, // This would come from a sensors endpoint if available
+            avgRiskLevel: Math.round(summary?.average_risk_score || 0),
+          });
+        } else {
+          // Fallback to default values if API returns no data
+          setStats({
+            totalZones: 0,
+            highRiskZones: 0,
+            activeSensors: 0,
+            avgRiskLevel: 0,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+        // Set default values on error
+        setStats({
+          totalZones: 0,
+          highRiskZones: 0,
+          activeSensors: 0,
+          avgRiskLevel: 0,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
   }, []);
 
   if (loading) {

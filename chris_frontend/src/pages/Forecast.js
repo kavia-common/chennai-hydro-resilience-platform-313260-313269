@@ -14,14 +14,13 @@ import './Forecast.css';
  */
 const Forecast = () => {
   const [formData, setFormData] = useState({
-    latitude: '',
-    longitude: '',
-    rainfall: '',
-    date: '',
+    years: 5,
+    include_climate_factors: true,
   });
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [rateLimitInfo, setRateLimitInfo] = useState(null);
 
   const handleChange = (e) => {
     setFormData({
@@ -33,13 +32,32 @@ const Forecast = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    setRateLimitInfo(null);
     setLoading(true);
 
     try {
-      const response = await api.post('/predict_flood_risk', formData);
-      setPrediction(response.data);
+      const response = await api.post('/forecast/', {
+        years: parseInt(formData.years),
+        include_climate_factors: formData.include_climate_factors,
+      });
+      
+      if (response.data?.success) {
+        setPrediction(response.data);
+      } else {
+        setError('Unexpected response format from server');
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch prediction');
+      // Handle different error types
+      if (err.response?.status === 401) {
+        setError('Authentication required. Please log in again.');
+      } else if (err.response?.status === 429 || err.rateLimitInfo) {
+        setRateLimitInfo(err.rateLimitInfo || { message: 'Rate limit exceeded' });
+        setError('Too many requests. Please wait before trying again.');
+      } else if (err.serverError || err.response?.status >= 500) {
+        setError('Server error. Please try again later.');
+      } else {
+        setError(err.response?.data?.detail || err.message || 'Failed to fetch prediction');
+      }
     } finally {
       setLoading(false);
     }
@@ -57,71 +75,50 @@ const Forecast = () => {
           <h2>Input Parameters</h2>
           
           {error && <Alert type="error" onClose={() => setError(null)}>{error}</Alert>}
+          {rateLimitInfo && (
+            <Alert type="warning" onClose={() => setRateLimitInfo(null)}>
+              {rateLimitInfo.message}
+              {rateLimitInfo.retryAfter && ` Retry after: ${new Date(rateLimitInfo.retryAfter * 1000).toLocaleTimeString()}`}
+            </Alert>
+          )}
 
           <form onSubmit={handleSubmit}>
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="latitude">
-                  <FontAwesomeIcon icon={faMapPin} /> Latitude
+                <label htmlFor="years">
+                  <FontAwesomeIcon icon={faCalendarAlt} /> Forecast Years
                 </label>
                 <input
-                  id="latitude"
+                  id="years"
                   type="number"
-                  step="0.000001"
-                  name="latitude"
-                  value={formData.latitude}
+                  min="1"
+                  max="10"
+                  name="years"
+                  value={formData.years}
                   onChange={handleChange}
-                  placeholder="e.g., 13.0827"
+                  placeholder="e.g., 5"
                   required
                 />
+                <small style={{ color: 'var(--text-secondary)', marginTop: '0.5rem', display: 'block' }}>
+                  Number of years to forecast (1-10)
+                </small>
               </div>
 
               <div className="form-group">
-                <label htmlFor="longitude">
-                  <FontAwesomeIcon icon={faMapPin} /> Longitude
+                <label htmlFor="include_climate_factors">
+                  <FontAwesomeIcon icon={faCloudRain} /> Include Climate Factors
                 </label>
-                <input
-                  id="longitude"
-                  type="number"
-                  step="0.000001"
-                  name="longitude"
-                  value={formData.longitude}
-                  onChange={handleChange}
-                  placeholder="e.g., 80.2707"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="rainfall">
-                  <FontAwesomeIcon icon={faCloudRain} /> Rainfall (mm)
-                </label>
-                <input
-                  id="rainfall"
-                  type="number"
-                  step="0.1"
-                  name="rainfall"
-                  value={formData.rainfall}
-                  onChange={handleChange}
-                  placeholder="e.g., 150"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="date">
-                  <FontAwesomeIcon icon={faCalendarAlt} /> Date
-                </label>
-                <input
-                  id="date"
-                  type="date"
-                  name="date"
-                  value={formData.date}
-                  onChange={handleChange}
-                  required
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.875rem' }}>
+                  <input
+                    id="include_climate_factors"
+                    type="checkbox"
+                    name="include_climate_factors"
+                    checked={formData.include_climate_factors}
+                    onChange={(e) => setFormData({ ...formData, include_climate_factors: e.target.checked })}
+                    style={{ width: 'auto', margin: 0 }}
+                  />
+                  <span style={{ color: 'var(--text-primary)' }}>Include ONI and IOD anomaly data</span>
+                </div>
               </div>
             </div>
 
@@ -131,24 +128,52 @@ const Forecast = () => {
           </form>
         </Card>
 
-        {prediction && (
+        {prediction && prediction.data && (
           <Card className="prediction-result">
-            <h2>Prediction Result</h2>
-            <div className="prediction-content">
-              <div className="prediction-metric">
-                <h3>Risk Level</h3>
-                <p className={`risk-level risk-${prediction.risk_level || 'medium'}`}>
-                  {prediction.risk_level?.toUpperCase() || 'MEDIUM'}
-                </p>
-              </div>
-              <div className="prediction-metric">
-                <h3>Confidence</h3>
-                <p className="confidence-value">{prediction.confidence || 85}%</p>
-              </div>
-            </div>
+            <h2>Forecast Results</h2>
             {prediction.message && (
-              <Alert type="info">{prediction.message}</Alert>
+              <Alert type="info" style={{ marginBottom: '1rem' }}>{prediction.message}</Alert>
             )}
+            <div style={{ marginBottom: '1rem' }}>
+              <small style={{ color: 'var(--text-secondary)' }}>
+                Model: {prediction.model_version || 'N/A'} | Generated: {new Date(prediction.generated_at).toLocaleString()}
+              </small>
+            </div>
+            {prediction.data.map((yearData, index) => (
+              <div key={index} style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: index < prediction.data.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
+                <h3 style={{ marginBottom: '0.75rem', color: 'var(--text-primary)' }}>Year {yearData.year}</h3>
+                <div className="prediction-content">
+                  <div className="prediction-metric">
+                    <h3>Risk Category</h3>
+                    <p className={`risk-level risk-${yearData.risk_category?.toLowerCase() || 'medium'}`}>
+                      {yearData.risk_category?.toUpperCase() || 'N/A'}
+                    </p>
+                  </div>
+                  <div className="prediction-metric">
+                    <h3>Risk Score</h3>
+                    <p className="confidence-value">{yearData.risk_score?.toFixed(1) || 'N/A'}</p>
+                  </div>
+                  {yearData.confidence && (
+                    <div className="prediction-metric">
+                      <h3>Confidence</h3>
+                      <p className="confidence-value">{(yearData.confidence * 100).toFixed(0)}%</p>
+                    </div>
+                  )}
+                  {yearData.predicted_rainfall_mm && (
+                    <div className="prediction-metric">
+                      <h3>Predicted Rainfall</h3>
+                      <p className="confidence-value">{yearData.predicted_rainfall_mm.toFixed(0)} mm</p>
+                    </div>
+                  )}
+                </div>
+                {formData.include_climate_factors && (yearData.oni_anomaly || yearData.iod_anomaly) && (
+                  <div style={{ marginTop: '0.75rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                    {yearData.oni_anomaly && <div>ONI Anomaly: {yearData.oni_anomaly.toFixed(2)}</div>}
+                    {yearData.iod_anomaly && <div>IOD Anomaly: {yearData.iod_anomaly.toFixed(2)}</div>}
+                  </div>
+                )}
+              </div>
+            ))}
           </Card>
         )}
       </div>
