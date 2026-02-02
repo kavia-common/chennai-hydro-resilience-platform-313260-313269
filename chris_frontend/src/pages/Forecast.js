@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCloudRain, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
+import { faCloudRain, faCalendarAlt, faRedoAlt } from '@fortawesome/free-solid-svg-icons';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import Alert from '../components/common/Alert';
+import Loader from '../components/common/Loader';
+import Skeleton from '../components/common/Skeleton';
 import api from '../services/api';
 import './Forecast.css';
 
@@ -11,6 +13,7 @@ import './Forecast.css';
 /**
  * Forecast page for flood risk prediction.
  * Allows users to input parameters and view predictions.
+ * Supports request cancellation, retry, and detailed error handling.
  */
 const Forecast = () => {
   const [formData, setFormData] = useState({
@@ -20,7 +23,25 @@ const Forecast = () => {
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [errorType, setErrorType] = useState(null); // 'timeout', 'server', 'network', etc.
   const [rateLimitInfo, setRateLimitInfo] = useState(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [requestDuration, setRequestDuration] = useState(null);
+  
+  const abortControllerRef = useRef(null);
+  const timerRef = useRef(null);
+
+  // Cleanup on unmount - cancel any pending requests
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
 
   const handleChange = (e) => {
     setFormData({
@@ -31,35 +52,98 @@ const Forecast = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Cancel any existing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    
+    // Reset state
     setError(null);
+    setErrorType(null);
     setRateLimitInfo(null);
     setLoading(true);
+    setElapsedTime(0);
+    setRequestDuration(null);
+    
+    // Create new AbortController for this request
+    abortControllerRef.current = new AbortController();
+    
+    // Start elapsed time counter
+    const startTime = Date.now();
+    timerRef.current = setInterval(() => {
+      setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
 
     try {
       const response = await api.post('/forecast/', {
         years: parseInt(formData.years),
         include_climate_factors: formData.include_climate_factors,
+      }, {
+        signal: abortControllerRef.current.signal,
       });
+      
+      // Stop timer and record duration
+      clearInterval(timerRef.current);
+      const duration = response.duration || (Date.now() - startTime);
+      setRequestDuration(duration);
       
       if (response.data?.success) {
         setPrediction(response.data);
       } else {
         setError('Unexpected response format from server');
+        setErrorType('response');
       }
     } catch (err) {
+      // Stop timer
+      clearInterval(timerRef.current);
+      
+      // Check if request was aborted
+      if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') {
+        console.log('Request was cancelled by user');
+        return; // Don't show error for user-initiated cancellation
+      }
+      
       // Handle different error types
-      if (err.response?.status === 401) {
+      if (err.isTimeout || err.code === 'ECONNABORTED') {
+        setError('Request timeout - the forecast computation took too long. Please try again or reduce the forecast years.');
+        setErrorType('timeout');
+      } else if (err.response?.status === 401) {
         setError('Authentication required. Please log in again.');
+        setErrorType('auth');
       } else if (err.response?.status === 429 || err.rateLimitInfo) {
         setRateLimitInfo(err.rateLimitInfo || { message: 'Rate limit exceeded' });
         setError('Too many requests. Please wait before trying again.');
+        setErrorType('ratelimit');
       } else if (err.serverError || err.response?.status >= 500) {
-        setError('Server error. Please try again later.');
+        setError(`Server error (${err.response?.status || 500}). The backend service may be experiencing issues. Please try again later.`);
+        setErrorType('server');
+      } else if (!err.response) {
+        setError('Network error - unable to reach the server. Please check your connection.');
+        setErrorType('network');
       } else {
         setError(err.response?.data?.detail || err.message || 'Failed to fetch prediction');
+        setErrorType('unknown');
       }
     } finally {
       setLoading(false);
+      clearInterval(timerRef.current);
+    }
+  };
+  
+  const handleRetry = () => {
+    handleSubmit({ preventDefault: () => {} });
+  };
+  
+  const handleCancel = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      setLoading(false);
+      clearInterval(timerRef.current);
+      setElapsedTime(0);
     }
   };
 
@@ -74,12 +158,68 @@ const Forecast = () => {
         <Card className="forecast-form-card">
           <h2>Input Parameters</h2>
           
-          {error && <Alert type="error" onClose={() => setError(null)}>{error}</Alert>}
+          {error && (
+            <Alert type="error" onClose={() => { setError(null); setErrorType(null); }}>
+              <div style={{ marginBottom: '0.5rem' }}>{error}</div>
+              {(errorType === 'timeout' || errorType === 'server' || errorType === 'network') && (
+                <Button 
+                  variant="secondary" 
+                  size="small" 
+                  onClick={handleRetry}
+                  style={{ marginTop: '0.5rem' }}
+                >
+                  <FontAwesomeIcon icon={faRedoAlt} style={{ marginRight: '0.5rem' }} />
+                  Retry Request
+                </Button>
+              )}
+            </Alert>
+          )}
           {rateLimitInfo && (
             <Alert type="warning" onClose={() => setRateLimitInfo(null)}>
               {rateLimitInfo.message}
               {rateLimitInfo.retryAfter && ` Retry after: ${new Date(rateLimitInfo.retryAfter * 1000).toLocaleTimeString()}`}
             </Alert>
+          )}
+          
+          {loading && (
+            <div style={{ 
+              padding: '1rem', 
+              marginBottom: '1rem', 
+              background: 'var(--surface)', 
+              borderRadius: '8px',
+              border: '1px solid var(--border-color)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                <Loader size="small" />
+                <span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>
+                  Processing forecast request...
+                </span>
+              </div>
+              <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                Elapsed time: {elapsedTime}s {elapsedTime > 30 && '(this may take a while)'}
+              </div>
+              <Button 
+                variant="secondary" 
+                size="small" 
+                onClick={handleCancel}
+                style={{ marginTop: '0.75rem' }}
+              >
+                Cancel Request
+              </Button>
+            </div>
+          )}
+          
+          {requestDuration && !loading && (
+            <div style={{ 
+              padding: '0.75rem', 
+              marginBottom: '1rem', 
+              background: 'var(--success)/10', 
+              borderRadius: '8px',
+              fontSize: '0.875rem',
+              color: 'var(--text-secondary)'
+            }}>
+              Request completed in {(requestDuration / 1000).toFixed(1)}s
+            </div>
           )}
 
           <form onSubmit={handleSubmit}>
@@ -128,6 +268,15 @@ const Forecast = () => {
           </form>
         </Card>
 
+        {loading && !prediction && (
+          <Card className="prediction-result">
+            <h2>Forecast Results</h2>
+            <Skeleton height="100px" style={{ marginBottom: '1rem' }} />
+            <Skeleton height="80px" style={{ marginBottom: '1rem' }} />
+            <Skeleton height="80px" />
+          </Card>
+        )}
+        
         {prediction && prediction.data && (
           <Card className="prediction-result">
             <h2>Forecast Results</h2>
