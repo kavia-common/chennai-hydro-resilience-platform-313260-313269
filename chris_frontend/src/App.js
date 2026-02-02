@@ -1,48 +1,116 @@
-import React, { useState, useEffect } from 'react';
-import logo from './logo.svg';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import useUIStore from './store/useUIStore';
+import Header from './components/layout/Header';
+import Sidebar from './components/layout/Sidebar';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import Dashboard from './pages/Dashboard';
+import Forecast from './pages/Forecast';
+import ZoneExplorer from './pages/ZoneExplorer';
+import Reports from './pages/Reports';
+import Loader from './components/common/Loader';
 import './App.css';
 
 // PUBLIC_INTERFACE
+/**
+ * PrivateRoute wrapper to protect authenticated routes.
+ */
+const PrivateRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <Loader size="large" text="Loading..." />;
+  }
+
+  return user ? children : <Navigate to="/login" />;
+};
+
+// PUBLIC_INTERFACE
+/**
+ * AppLayout component with Header and Sidebar for authenticated pages.
+ */
+const AppLayout = ({ children }) => {
+  return (
+    <div className="app-layout">
+      <Header />
+      <div className="app-body">
+        <Sidebar />
+        <main className="app-main">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+};
+
+// PUBLIC_INTERFACE
+/**
+ * Main App component with routing and theme management.
+ * Entry point for the CHRIS application.
+ */
 function App() {
-  const [theme, setTheme] = useState('light');
+  const { theme, setTheme } = useUIStore();
 
-  // Effect to apply theme to document element
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-
-  // PUBLIC_INTERFACE
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
+    // Apply theme on mount
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
+  }, [setTheme]);
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <button 
-          className="theme-toggle" 
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-        >
-          {theme === 'light' ? '🌙 Dark' : '☀️ Light'}
-        </button>
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <p>
-          Current theme: <strong>{theme}</strong>
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <AuthProvider>
+      <Router>
+        <div className="App" data-theme={theme}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route
+              path="/dashboard"
+              element={
+                <PrivateRoute>
+                  <AppLayout>
+                    <Dashboard />
+                  </AppLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/forecast"
+              element={
+                <PrivateRoute>
+                  <AppLayout>
+                    <Forecast />
+                  </AppLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/zone-explorer"
+              element={
+                <PrivateRoute>
+                  <AppLayout>
+                    <ZoneExplorer />
+                  </AppLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <PrivateRoute>
+                  <AppLayout>
+                    <Reports />
+                  </AppLayout>
+                </PrivateRoute>
+              }
+            />
+            <Route path="/" element={<Navigate to="/dashboard" />} />
+          </Routes>
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 
