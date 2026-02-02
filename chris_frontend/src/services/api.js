@@ -62,12 +62,25 @@ api.interceptors.request.use(
     // Capture request start time for latency tracking
     config.metadata = { startTime: Date.now() };
     
-    // Normalize the URL path: remove leading slash if baseURL has trailing slash
-    if (config.url && config.url.startsWith('/') && config.baseURL && config.baseURL.endsWith('/')) {
-      config.url = config.url.substring(1);
+    // Normalize the URL path: ensure proper joining with baseURL
+    if (config.url) {
+      // Remove leading slash if baseURL has trailing slash
+      if (config.url.startsWith('/') && config.baseURL && config.baseURL.endsWith('/')) {
+        config.url = config.url.substring(1);
+      }
+      // Add leading slash if baseURL doesn't have trailing slash and url doesn't start with slash
+      else if (!config.url.startsWith('/') && config.baseURL && !config.baseURL.endsWith('/')) {
+        config.url = '/' + config.url;
+      }
     }
     
-    // Log the full request URL for debugging
+    // Force HTTPS protocol for absolute URLs (catch any http:// that might slip through)
+    if (config.baseURL && config.baseURL.startsWith('http://')) {
+      config.baseURL = config.baseURL.replace('http://', 'https://');
+      console.warn('[API] Forced HTTPS protocol for baseURL:', config.baseURL);
+    }
+    
+    // Construct and log the full request URL for debugging
     const fullURL = config.baseURL + (config.url || '');
     console.log(`[API Request] ${config.method?.toUpperCase()} ${fullURL}`);
     
