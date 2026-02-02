@@ -19,7 +19,7 @@
     "zustand": "^4.4.7"
   },
   "scripts": {
-    "start": "GENERATE_SOURCEMAP=true BROWSER=none PORT=3000 DANGEROUSLY_DISABLE_HOST_CHECK=true WDS_SOCKET_PATH=/proxy/3000/ws PUBLIC_URL=/proxy/3000 react-app-rewired start",
+    "start": "HOST=0.0.0.0 PORT=3000 GENERATE_SOURCEMAP=true BROWSER=none DANGEROUSLY_DISABLE_HOST_CHECK=true WDS_SOCKET_PATH=/proxy/3000/ws PUBLIC_URL=/proxy/3000 react-app-rewired start",
     "build": "react-app-rewired build",
     "test": "CI=true react-app-rewired test",
     "eject": "react-scripts eject",

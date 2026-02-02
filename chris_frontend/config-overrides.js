@@ -41,6 +41,9 @@ module.exports = function override(config, env) {
           lastModified: false,
         },
         
+        // CRITICAL: Bind to 0.0.0.0 so proxy can connect
+        host: '0.0.0.0',
+        
         // Allow all hosts
         allowedHosts: 'all',
         
