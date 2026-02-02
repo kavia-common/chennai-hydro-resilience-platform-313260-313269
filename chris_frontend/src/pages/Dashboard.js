@@ -35,9 +35,7 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       try {
         // Fetch citywide risk data from backend
-        // baseURL is https://host:3001 (no trailing slash)
-        // url will be /api/v1/citywide-risk (added by interceptor)
-        // Result: https://host:3001/api/v1/citywide-risk?limit=10
+        // API client will construct: https://host:3001/api/v1/citywide-risk?limit=10
         const response = await api.get('citywide-risk', {
           params: { limit: 10 }
         });
@@ -49,12 +47,13 @@ const Dashboard = () => {
           // Calculate dashboard stats from API data
           setStats({
             totalZones: summary?.total_years || riskData.length,
-            highRiskZones: summary?.critical_years?.length + summary?.high_risk_years?.length || 0,
+            highRiskZones: (summary?.critical_years?.length || 0) + (summary?.high_risk_years?.length || 0),
             activeSensors: 156, // This would come from a sensors endpoint if available
             avgRiskLevel: Math.round(summary?.average_risk_score || 0),
           });
         } else {
           // Fallback to default values if API returns no data
+          console.warn('API returned success but no data');
           setStats({
             totalZones: 0,
             highRiskZones: 0,

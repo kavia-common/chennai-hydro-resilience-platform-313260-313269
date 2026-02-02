@@ -79,9 +79,7 @@ const Forecast = () => {
     }, 1000);
 
     try {
-      // baseURL is https://host:3001 (no trailing slash)
-      // url will be /api/v1/forecast (added by interceptor)
-      // Result: https://host:3001/api/v1/forecast
+      // API client will construct: https://host:3001/api/v1/forecast
       const response = await api.post('forecast', {
         years: parseInt(formData.years),
         include_climate_factors: formData.include_climate_factors,

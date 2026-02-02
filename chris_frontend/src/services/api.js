@@ -5,9 +5,8 @@ import { getApiBaseURL } from '../config/apiConfig';
 // PUBLIC_INTERFACE
 /**
  * Axios instance configured for CHRIS backend API.
- * Uses fully absolute URLs with manual construction to prevent axios URL resolution issues
- * that cause mixed-content errors (HTTP vs HTTPS, missing ports).
- * Authorization token (Supabase JWT) is automatically injected for protected routes.
+ * Uses fully absolute URLs to prevent any axios URL resolution issues.
+ * All requests MUST use HTTPS to port 3001 to avoid mixed-content errors.
  */
 
 // Get the validated base URL (e.g., https://host:3001)
@@ -26,51 +25,14 @@ if (!BASE_URL.includes(':3001')) {
   throw new Error('[API Client] CRITICAL: Base URL missing port 3001: ' + BASE_URL);
 }
 
-// Helper function to construct absolute URL
-const buildAbsoluteURL = (path, params) => {
-  // Normalize path - remove leading/trailing slashes
-  let normalizedPath = (path || '').trim();
-  if (normalizedPath.startsWith('/')) {
-    normalizedPath = normalizedPath.substring(1);
-  }
-  if (normalizedPath.endsWith('/')) {
-    normalizedPath = normalizedPath.substring(0, normalizedPath.length - 1);
-  }
-  
-  // Build absolute URL: https://host:3001/api/v1/path
-  const absoluteUrl = `${BASE_URL}${API_PREFIX}/${normalizedPath}`;
-  
-  // Validate
-  if (!absoluteUrl.startsWith('https://')) {
-    throw new Error('CRITICAL: Constructed URL is not HTTPS: ' + absoluteUrl);
-  }
-  if (!absoluteUrl.includes(':3001')) {
-    throw new Error('CRITICAL: Constructed URL missing port 3001: ' + absoluteUrl);
-  }
-  
-  // Add query params if present
-  if (params && Object.keys(params).length > 0) {
-    const searchParams = new URLSearchParams();
-    Object.keys(params).forEach(key => {
-      const value = params[key];
-      if (value !== null && value !== undefined) {
-        searchParams.append(key, value);
-      }
-    });
-    return `${absoluteUrl}?${searchParams.toString()}`;
-  }
-  
-  return absoluteUrl;
-};
-
-// Create axios instance WITHOUT baseURL
+// Create axios instance WITHOUT baseURL to prevent any automatic URL construction
 const api = axios.create({
   timeout: 120000, // 120 seconds
   headers: {
     'Content-Type': 'application/json',
   },
   withCredentials: false,
-  // CRITICAL: Do NOT set baseURL - we use absolute URLs
+  // CRITICAL: Do NOT set baseURL - we construct absolute URLs manually
 });
 
 // Request interceptor to inject auth token and ensure absolute URLs
@@ -79,23 +41,60 @@ api.interceptors.request.use(
     // Start timing
     config.metadata = { startTime: Date.now() };
     
-    // CRITICAL: Build absolute URL manually and replace config.url
-    // Extract params from config
-    const params = config.params;
+    // CRITICAL: Construct absolute URL manually
+    // Input: config.url = 'citywide-risk' or '/citywide-risk' or 'map/sponge-zones'
+    // Output: https://host:3001/api/v1/citywide-risk
     
-    // Build the absolute URL
-    const absoluteUrl = buildAbsoluteURL(config.url, params);
+    let path = (config.url || '').trim();
     
-    // Log for debugging
-    console.log(`[API Request] ${config.method?.toUpperCase()} ${absoluteUrl}`);
+    // Remove leading slash if present
+    if (path.startsWith('/')) {
+      path = path.substring(1);
+    }
     
-    // CRITICAL: Replace the URL with absolute URL and clear params (already in URL)
-    config.url = absoluteUrl;
+    // Remove trailing slash if present
+    if (path.endsWith('/')) {
+      path = path.substring(0, path.length - 1);
+    }
+    
+    // Build the full URL: https://host:3001/api/v1/path
+    let fullUrl = `${BASE_URL}${API_PREFIX}/${path}`;
+    
+    // Handle query parameters if present
+    if (config.params && Object.keys(config.params).length > 0) {
+      const searchParams = new URLSearchParams();
+      Object.keys(config.params).forEach(key => {
+        const value = config.params[key];
+        if (value !== null && value !== undefined) {
+          searchParams.append(key, value);
+        }
+      });
+      const queryString = searchParams.toString();
+      if (queryString) {
+        fullUrl = `${fullUrl}?${queryString}`;
+      }
+    }
+    
+    // Final validation
+    if (!fullUrl.startsWith('https://')) {
+      throw new Error('[API Client] CRITICAL: Constructed URL is not HTTPS: ' + fullUrl);
+    }
+    if (!fullUrl.includes(':3001')) {
+      throw new Error('[API Client] CRITICAL: Constructed URL missing port 3001: ' + fullUrl);
+    }
+    
+    // Log the request
+    console.log(`[API Request] ${config.method?.toUpperCase()} ${fullUrl}`);
+    
+    // CRITICAL: Replace config.url with the full absolute URL
+    config.url = fullUrl;
+    
+    // CRITICAL: Clear these to prevent axios from modifying the URL
+    config.baseURL = undefined;
     config.params = undefined; // Already encoded in URL
-    config.baseURL = undefined; // Explicitly clear to prevent axios combining
     
+    // Inject auth token
     try {
-      // Get current Supabase session and inject token
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.access_token) {
@@ -120,7 +119,7 @@ api.interceptors.response.use(
     // Calculate and log duration
     if (response.config.metadata?.startTime) {
       const duration = Date.now() - response.config.metadata.startTime;
-      console.log(`[API Response] ${response.config.method?.toUpperCase()} ${response.config.url} - ${duration}ms - Status: ${response.status}`);
+      console.log(`[API Response] ${response.config.method?.toUpperCase()} ${response.config.url} - ${duration}ms - Status: ${response.status}`)
       response.duration = duration;
     }
     return response;
@@ -129,32 +128,24 @@ api.interceptors.response.use(
     // Calculate duration
     if (error.config?.metadata?.startTime) {
       const duration = Date.now() - error.config.metadata.startTime;
-      console.error(`[API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url} - ${duration}ms - Status: ${error.response?.status || 'Network Error'}`);
-      error.duration = duration;
+      const method = error.config?.method?.toUpperCase();
+      const url = error.config?.url;
+      const status = error.response?.status || 'Network Error';
       
-      // Log error for monitoring
-      if (process.env.NODE_ENV === 'development') {
-        logApiCall({
-          method: error.config?.method?.toUpperCase(),
-          url: error.config?.url,
-          path: error.config?.url?.replace(BASE_URL, ''),
-          status: error.response?.status || 'Network Error',
-          duration: duration,
-          success: false,
-          error: error.message
-        });
+      console.error(`[API Error] ${method} ${url} - ${duration}ms - Status: ${status}`);
+      
+      // Additional error details
+      if (error.message) {
+        console.error('[API Error] Message:', error.message);
       }
-    }
-    
-    // Log error details
-    if (error.message) {
-      console.error('[API Error] Message:', error.message);
-    }
-    if (error.code) {
-      console.error('[API Error] Code:', error.code);
-    }
-    if (error.response?.data) {
-      console.error('[API Error] Response data:', error.response.data);
+      if (error.code) {
+        console.error('[API Error] Code:', error.code);
+      }
+      if (error.response?.data) {
+        console.error('[API Error] Response data:', error.response.data);
+      }
+      
+      error.duration = duration;
     }
     
     const status = error.response?.status;
