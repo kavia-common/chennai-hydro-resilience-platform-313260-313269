@@ -1,9 +1,21 @@
 import api from '../services/api';
+import { getApiBaseURL } from '../config/apiConfig';
 
 /**
  * API diagnostics utilities for testing connectivity and debugging issues.
  * Use these functions to verify API configuration and test endpoints.
  */
+
+// Get the configured backend URL
+const getConfiguredBaseURL = () => {
+  try {
+    const baseURL = getApiBaseURL();
+    return `${baseURL}/api/v1`;
+  } catch (error) {
+    console.error('[API Diagnostics] Failed to get configured base URL:', error);
+    return 'CONFIGURATION_ERROR';
+  }
+};
 
 // PUBLIC_INTERFACE
 /**
@@ -11,31 +23,37 @@ import api from '../services/api';
  * @returns {Promise<object>} Diagnostic results
  */
 export const testAPIConnection = async () => {
+  const configuredURL = getConfiguredBaseURL();
+  
   const results = {
-    baseURL: api.defaults.baseURL,
+    configuredURL,
+    envVars: {
+      REACT_APP_API_BASE: process.env.REACT_APP_API_BASE,
+      REACT_APP_BACKEND_URL: process.env.REACT_APP_BACKEND_URL,
+    },
     timestamp: new Date().toISOString(),
     tests: [],
   };
   
   console.log('[API Diagnostics] Starting connectivity tests...');
-  console.log('[API Diagnostics] Base URL:', results.baseURL);
+  console.log('[API Diagnostics] Configured URL:', configuredURL);
   
   // Test 1: Verify base URL is HTTPS
-  const isHTTPS = results.baseURL.startsWith('https://');
+  const isHTTPS = configuredURL.startsWith('https://');
   results.tests.push({
     name: 'Base URL Protocol',
     passed: isHTTPS,
     message: isHTTPS ? 'Using HTTPS' : 'WARNING: Not using HTTPS!',
-    value: results.baseURL.split('://')[0],
+    value: configuredURL.split('://')[0],
   });
   
   // Test 2: Verify base URL contains port 3001
-  const hasPort3001 = results.baseURL.includes(':3001');
+  const hasPort3001 = configuredURL.includes(':3001');
   results.tests.push({
     name: 'Backend Port',
     passed: hasPort3001,
     message: hasPort3001 ? 'Correct backend port (3001)' : 'WARNING: Missing port 3001',
-    value: results.baseURL,
+    value: configuredURL,
   });
   
   // Test 3: Try a simple GET request (use a lightweight endpoint)
@@ -80,10 +98,13 @@ export const testAPIConnection = async () => {
  * Log detailed API configuration for debugging.
  */
 export const logAPIConfig = () => {
+  const configuredURL = getConfiguredBaseURL();
+  
   console.group('[API Diagnostics] Configuration');
-  console.log('Base URL:', api.defaults.baseURL);
-  console.log('Timeout:', api.defaults.timeout);
-  console.log('Headers:', api.defaults.headers);
+  console.log('Configured Full URL:', configuredURL);
+  console.log('Axios Instance Timeout:', api.defaults.timeout);
+  console.log('Axios Instance Headers:', api.defaults.headers);
+  console.log('Axios Instance baseURL:', api.defaults.baseURL || '(not set - using absolute URLs)');
   console.log('Environment Variables:');
   console.log('  REACT_APP_API_BASE:', process.env.REACT_APP_API_BASE);
   console.log('  REACT_APP_BACKEND_URL:', process.env.REACT_APP_BACKEND_URL);
@@ -96,17 +117,20 @@ export const logAPIConfig = () => {
 /**
  * Test a specific endpoint with custom parameters.
  * @param {string} method - HTTP method (get, post, etc.)
- * @param {string} endpoint - Endpoint path
+ * @param {string} endpoint - Endpoint path (without leading slash)
  * @param {object} data - Request data/params
  * @returns {Promise<object>} Test result
  */
 export const testEndpoint = async (method, endpoint, data = {}) => {
   console.log(`[API Diagnostics] Testing ${method.toUpperCase()} ${endpoint}`);
   
+  const configuredURL = getConfiguredBaseURL();
+  const cleanEndpoint = endpoint.replace(/^\/+/, '');
+  
   const result = {
     method,
-    endpoint,
-    fullURL: `${api.defaults.baseURL}/api/v1/${endpoint}`,
+    endpoint: cleanEndpoint,
+    expectedURL: `${configuredURL}/${cleanEndpoint}`,
     success: false,
     error: null,
     duration: 0,
@@ -115,7 +139,7 @@ export const testEndpoint = async (method, endpoint, data = {}) => {
   
   try {
     const startTime = Date.now();
-    const response = await api[method](endpoint, data);
+    const response = await api[method](cleanEndpoint, data);
     result.duration = Date.now() - startTime;
     result.success = true;
     result.response = {

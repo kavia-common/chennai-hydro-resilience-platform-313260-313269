@@ -28,9 +28,10 @@ if (!FULL_BASE_URL.includes(':3001')) {
   throw new Error('[API Client] CRITICAL: Base URL missing port 3001: ' + FULL_BASE_URL);
 }
 
-// Create axios instance WITHOUT baseURL to avoid relative URL resolution issues
-// We'll construct absolute URLs manually in the interceptor
+// Create axios instance WITHOUT baseURL to prevent any relative URL resolution
+// We construct absolute URLs manually in the interceptor to ensure full control
 const api = axios.create({
+  // DO NOT set baseURL - we build absolute URLs in interceptor
   timeout: 120000, // 120 seconds
   headers: {
     'Content-Type': 'application/json',
@@ -46,30 +47,58 @@ api.interceptors.request.use(
     
     // CRITICAL FIX: Construct absolute URL manually to avoid axios relative URL issues
     if (config.url) {
-      // Remove leading slashes from the path
-      const cleanPath = config.url.replace(/^\/+/, '');
-      
-      // Construct the ABSOLUTE URL with query params
-      // This prevents axios from doing any relative URL resolution
-      const fullUrl = `${FULL_BASE_URL}/${cleanPath}`;
-      
-      // Verify the constructed URL is correct
-      if (!fullUrl.startsWith('https://')) {
-        console.error('[API Client] ERROR: Constructed URL is not HTTPS:', fullUrl);
-        throw new Error('API URL construction error: not HTTPS');
+      // Check if URL is already absolute (shouldn't happen, but handle it)
+      if (config.url.startsWith('http://') || config.url.startsWith('https://')) {
+        console.warn('[API Client] URL is already absolute:', config.url);
+        
+        // Verify it's using HTTPS and port 3001
+        if (!config.url.startsWith('https://')) {
+          console.error('[API Client] ERROR: Absolute URL is not HTTPS:', config.url);
+          throw new Error('API URL must use HTTPS');
+        }
+        if (!config.url.includes(':3001/api/v1/')) {
+          console.error('[API Client] ERROR: Absolute URL missing port 3001 or /api/v1/:', config.url);
+          throw new Error('API URL must use port 3001 and /api/v1/ prefix');
+        }
+        
+        // URL is already correct, just log and continue
+        const queryString = config.params ? '?' + new URLSearchParams(config.params).toString() : '';
+        console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}${queryString}`);
+      } else {
+        // URL is relative - construct absolute URL
+        // Remove leading slashes and any accidental /api/v1 prefix from the path
+        let cleanPath = config.url.replace(/^\/+/, '');
+        cleanPath = cleanPath.replace(/^api\/v1\//, '');
+        
+        // Construct the ABSOLUTE URL
+        // This prevents axios from doing any relative URL resolution
+        const fullUrl = `${FULL_BASE_URL}/${cleanPath}`;
+        
+        // Verify the constructed URL is correct
+        if (!fullUrl.startsWith('https://')) {
+          console.error('[API Client] ERROR: Constructed URL is not HTTPS:', fullUrl);
+          console.error('[API Client] Original URL:', config.url);
+          console.error('[API Client] FULL_BASE_URL:', FULL_BASE_URL);
+          throw new Error('API URL construction error: not HTTPS');
+        }
+        if (!fullUrl.includes(':3001')) {
+          console.error('[API Client] ERROR: Constructed URL missing port 3001:', fullUrl);
+          console.error('[API Client] Original URL:', config.url);
+          console.error('[API Client] FULL_BASE_URL:', FULL_BASE_URL);
+          throw new Error('API URL construction error: missing port 3001');
+        }
+        
+        // IMPORTANT: Set the config.url to the ABSOLUTE URL
+        // This ensures axios doesn't try to resolve it relative to window.location
+        config.url = fullUrl;
+        
+        // Log the request with query params for debugging
+        const queryString = config.params ? '?' + new URLSearchParams(config.params).toString() : '';
+        console.log(`[API Request] ${config.method?.toUpperCase()} ${fullUrl}${queryString}`);
       }
-      if (!fullUrl.includes(':3001')) {
-        console.error('[API Client] ERROR: Constructed URL missing port 3001:', fullUrl);
-        throw new Error('API URL construction error: missing port 3001');
-      }
-      
-      // IMPORTANT: Set the config.url to the ABSOLUTE URL
-      // This ensures axios doesn't try to resolve it relative to window.location
-      config.url = fullUrl;
-      
-      // Log the request with query params for debugging
-      const queryString = config.params ? '?' + new URLSearchParams(config.params).toString() : '';
-      console.log(`[API Request] ${config.method?.toUpperCase()} ${fullUrl}${queryString}`);
+    } else {
+      console.error('[API Client] ERROR: No URL provided in request config');
+      throw new Error('Request must include a URL');
     }
     
     // Inject auth token
