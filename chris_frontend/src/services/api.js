@@ -9,7 +9,7 @@ import { supabase } from './supabase';
  * Timeout increased to 120s to handle long-running forecast computations.
  */
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE || 'http://localhost:3001/api/v1',
+  baseURL: '/api/v1',
   timeout: 120000, // 120 seconds for long-running operations
   headers: {
     'Content-Type': 'application/json',
