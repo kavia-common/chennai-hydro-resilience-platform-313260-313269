@@ -79,7 +79,7 @@ const Forecast = () => {
     }, 1000);
 
     try {
-      const response = await api.post('/forecast/', {
+      const response = await api.post('forecast/', {
         years: parseInt(formData.years),
         include_climate_factors: formData.include_climate_factors,
       }, {
