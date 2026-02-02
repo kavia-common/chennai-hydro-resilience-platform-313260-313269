@@ -35,7 +35,8 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       try {
         // Fetch citywide risk data from backend
-        // API client will construct: https://host:3001/api/v1/citywide-risk?limit=10
+        // CRITICAL: URL must NOT start with / (baseURL already ends with /)
+        // This will construct: https://host:3001/api/v1/citywide-risk?limit=10
         const response = await api.get('citywide-risk', {
           params: { limit: 10 }
         });

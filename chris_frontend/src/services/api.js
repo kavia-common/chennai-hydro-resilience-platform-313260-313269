@@ -13,8 +13,10 @@ import { getApiBaseURL } from '../config/apiConfig';
 const BASE_URL = getApiBaseURL();
 const API_PREFIX = '/api/v1';
 
-// Construct the full baseURL for axios (e.g., https://host:3001/api/v1)
-const FULL_BASE_URL = `${BASE_URL}${API_PREFIX}`;
+// CRITICAL: Construct the full baseURL for axios WITH TRAILING SLASH
+// This ensures axios properly joins relative URLs
+// Format: https://host:3001/api/v1/
+const FULL_BASE_URL = `${BASE_URL}${API_PREFIX}/`;
 
 console.log('[API Client] Backend URL configured:', FULL_BASE_URL);
 
@@ -29,7 +31,7 @@ if (!FULL_BASE_URL.includes(':3001')) {
 }
 
 // Create axios instance WITH baseURL set
-// This is the correct way to use axios - let it handle URL joining
+// baseURL ends with / so relative URLs should NOT start with /
 const api = axios.create({
   baseURL: FULL_BASE_URL,
   timeout: 120000, // 120 seconds
@@ -45,22 +47,30 @@ api.interceptors.request.use(
     // Start timing
     config.metadata = { startTime: Date.now() };
     
-    // Normalize the URL path
-    // Remove leading slash if present (baseURL already has the path)
-    if (config.url && config.url.startsWith('/')) {
-      config.url = config.url.substring(1);
+    // CRITICAL: Normalize the URL path for proper joining with baseURL
+    // baseURL has trailing /, so url should NOT have leading /
+    if (config.url) {
+      // Remove leading slashes (baseURL already ends with /)
+      config.url = config.url.replace(/^\/+/, '');
+      
+      // For logging: construct the full URL that will be requested
+      // This should always be https://host:3001/api/v1/{path}
+      const fullUrl = `${FULL_BASE_URL}${config.url}`;
+      
+      // Verify the constructed URL is correct
+      if (!fullUrl.startsWith('https://')) {
+        console.error('[API Client] ERROR: Constructed URL is not HTTPS:', fullUrl);
+        throw new Error('API URL construction error: not HTTPS');
+      }
+      if (!fullUrl.includes(':3001')) {
+        console.error('[API Client] ERROR: Constructed URL missing port 3001:', fullUrl);
+        throw new Error('API URL construction error: missing port 3001');
+      }
+      
+      // Log the request with query params
+      const queryString = config.params ? '?' + new URLSearchParams(config.params).toString() : '';
+      console.log(`[API Request] ${config.method?.toUpperCase()} ${fullUrl}${queryString}`);
     }
-    
-    // Remove trailing slash from URL
-    if (config.url && config.url.endsWith('/')) {
-      config.url = config.url.substring(0, config.url.length - 1);
-    }
-    
-    // Construct the full URL for logging
-    const fullUrl = `${FULL_BASE_URL}/${config.url || ''}`;
-    
-    // Log the request
-    console.log(`[API Request] ${config.method?.toUpperCase()} ${fullUrl}`, config.params || '');
     
     // Inject auth token
     try {

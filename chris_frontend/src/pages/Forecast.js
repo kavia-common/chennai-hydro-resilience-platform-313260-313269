@@ -79,7 +79,8 @@ const Forecast = () => {
     }, 1000);
 
     try {
-      // API client will construct: https://host:3001/api/v1/forecast
+      // CRITICAL: URL must NOT start with / (baseURL already ends with /)
+      // This will construct: https://host:3001/api/v1/forecast
       const response = await api.post('forecast', {
         years: parseInt(formData.years),
         include_climate_factors: formData.include_climate_factors,
