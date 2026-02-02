@@ -5,7 +5,7 @@ import { getApiBaseURL } from '../config/apiConfig';
 // PUBLIC_INTERFACE
 /**
  * Axios instance configured for CHRIS backend API.
- * Uses baseURL + relative paths to ensure proper HTTPS URL construction.
+ * Uses absolute URLs to avoid any proxy/webpack interference.
  * All requests MUST use HTTPS to port 3001 to avoid mixed-content errors.
  */
 
@@ -13,10 +13,8 @@ import { getApiBaseURL } from '../config/apiConfig';
 const BASE_URL = getApiBaseURL();
 const API_PREFIX = '/api/v1';
 
-// CRITICAL: Construct the full baseURL for axios WITH TRAILING SLASH
-// This ensures axios properly joins relative URLs
-// Format: https://host:3001/api/v1/
-const FULL_BASE_URL = `${BASE_URL}${API_PREFIX}/`;
+// CRITICAL: NO trailing slash - we'll construct full URLs manually
+const FULL_BASE_URL = `${BASE_URL}${API_PREFIX}`;
 
 console.log('[API Client] Backend URL configured:', FULL_BASE_URL);
 
@@ -30,10 +28,9 @@ if (!FULL_BASE_URL.includes(':3001')) {
   throw new Error('[API Client] CRITICAL: Base URL missing port 3001: ' + FULL_BASE_URL);
 }
 
-// Create axios instance WITH baseURL set
-// baseURL ends with / so relative URLs should NOT start with /
+// Create axios instance WITHOUT baseURL to avoid relative URL resolution issues
+// We'll construct absolute URLs manually in the interceptor
 const api = axios.create({
-  baseURL: FULL_BASE_URL,
   timeout: 120000, // 120 seconds
   headers: {
     'Content-Type': 'application/json',
@@ -41,21 +38,20 @@ const api = axios.create({
   withCredentials: false,
 });
 
-// Request interceptor to inject auth token and log requests
+// Request interceptor to inject auth token and construct absolute URLs
 api.interceptors.request.use(
   async (config) => {
     // Start timing
     config.metadata = { startTime: Date.now() };
     
-    // CRITICAL: Normalize the URL path for proper joining with baseURL
-    // baseURL has trailing /, so url should NOT have leading /
+    // CRITICAL FIX: Construct absolute URL manually to avoid axios relative URL issues
     if (config.url) {
-      // Remove leading slashes (baseURL already ends with /)
-      config.url = config.url.replace(/^\/+/, '');
+      // Remove leading slashes from the path
+      const cleanPath = config.url.replace(/^\/+/, '');
       
-      // For logging: construct the full URL that will be requested
-      // This should always be https://host:3001/api/v1/{path}
-      const fullUrl = `${FULL_BASE_URL}${config.url}`;
+      // Construct the ABSOLUTE URL with query params
+      // This prevents axios from doing any relative URL resolution
+      const fullUrl = `${FULL_BASE_URL}/${cleanPath}`;
       
       // Verify the constructed URL is correct
       if (!fullUrl.startsWith('https://')) {
@@ -67,7 +63,11 @@ api.interceptors.request.use(
         throw new Error('API URL construction error: missing port 3001');
       }
       
-      // Log the request with query params
+      // IMPORTANT: Set the config.url to the ABSOLUTE URL
+      // This ensures axios doesn't try to resolve it relative to window.location
+      config.url = fullUrl;
+      
+      // Log the request with query params for debugging
       const queryString = config.params ? '?' + new URLSearchParams(config.params).toString() : '';
       console.log(`[API Request] ${config.method?.toUpperCase()} ${fullUrl}${queryString}`);
     }

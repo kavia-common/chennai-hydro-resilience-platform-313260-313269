@@ -12,6 +12,7 @@ import ZoneExplorer from './pages/ZoneExplorer';
 import Reports from './pages/Reports';
 import Loader from './components/common/Loader';
 import ChatBot from './components/common/ChatBot';
+import { logApiDiagnostics } from './utils/apiUrlDiagnostic';
 import './App.css';
 
 // PUBLIC_INTERFACE
@@ -59,6 +60,14 @@ function App() {
     const savedTheme = localStorage.getItem('theme') || 'light';
     setTheme(savedTheme);
   }, [setTheme]);
+
+  // Run API diagnostics on startup
+  useEffect(() => {
+    const diagnostics = logApiDiagnostics();
+    if (diagnostics.status === 'FAIL') {
+      console.error('⚠️  API configuration has critical issues. API calls may fail.');
+    }
+  }, []);
 
   return (
     <AuthProvider>
