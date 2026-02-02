@@ -5,25 +5,39 @@ import { supabase } from './supabase';
 /**
  * Axios instance configured for CHRIS backend API.
  * Uses absolute backend URL from environment to ensure requests go to port 3001.
+ * Enforces HTTPS protocol and proper path joining for /api/v1/* endpoints.
  * Authorization token (Supabase JWT) is automatically injected for protected routes.
  * Timeout increased to 120s to handle long-running forecast computations.
  */
 
-// Get backend URL from environment, ensuring it includes the /api/v1 prefix and trailing slash
+// Get backend URL from environment, ensuring HTTPS and proper /api/v1 prefix
 const getBackendURL = () => {
   // Priority: REACT_APP_API_BASE > REACT_APP_BACKEND_URL > fallback to relative
-  const apiBase = process.env.REACT_APP_API_BASE || process.env.REACT_APP_BACKEND_URL;
+  let apiBase = process.env.REACT_APP_API_BASE || process.env.REACT_APP_BACKEND_URL;
   
   if (apiBase) {
-    // If the URL already includes /api/v1, ensure trailing slash
-    if (apiBase.endsWith('/api/v1')) {
-      return `${apiBase}/`;
+    // Normalize the URL: remove trailing slashes first
+    apiBase = apiBase.replace(/\/+$/, '');
+    
+    // Force HTTPS protocol if URL contains a protocol
+    if (apiBase.includes('://')) {
+      apiBase = apiBase.replace(/^http:\/\//i, 'https://');
+      // Ensure it starts with https://
+      if (!apiBase.startsWith('https://')) {
+        apiBase = 'https://' + apiBase.replace(/^[^:]+:\/\//, '');
+      }
+    } else {
+      // If no protocol, assume https
+      apiBase = 'https://' + apiBase;
     }
-    // If it ends with /api/v1/, return as is
-    if (apiBase.endsWith('/api/v1/')) {
-      return apiBase;
+    
+    // Check if /api/v1 is already in the path
+    if (apiBase.includes('/api/v1')) {
+      // Remove /api/v1 suffix if present to normalize
+      apiBase = apiBase.replace(/\/api\/v1\/?$/, '');
     }
-    // Otherwise append /api/v1/ with trailing slash
+    
+    // Always append /api/v1/ with trailing slash for proper path joining
     return `${apiBase}/api/v1/`;
   }
   
@@ -47,6 +61,11 @@ api.interceptors.request.use(
   async (config) => {
     // Capture request start time for latency tracking
     config.metadata = { startTime: Date.now() };
+    
+    // Normalize the URL path: remove leading slash if baseURL has trailing slash
+    if (config.url && config.url.startsWith('/') && config.baseURL && config.baseURL.endsWith('/')) {
+      config.url = config.url.substring(1);
+    }
     
     // Log the full request URL for debugging
     const fullURL = config.baseURL + (config.url || '');
@@ -86,7 +105,7 @@ api.interceptors.response.use(
     if (error.config?.metadata?.startTime) {
       const duration = Date.now() - error.config.metadata.startTime;
       const fullURL = error.config.baseURL + (error.config.url || '');
-      console.error(`[API Error] ${error.config.method?.toUpperCase()} ${fullURL} - ${duration}ms - Status: ${error.response?.status || 'Network Error'}`);
+      console.error(`[API Error] ${error.config.method?.toUpperCase()} ${fullURL} - ${duration}ms - Status: ${error.response?.status || 'Network Error'}`)
       error.duration = duration;
     }
     
