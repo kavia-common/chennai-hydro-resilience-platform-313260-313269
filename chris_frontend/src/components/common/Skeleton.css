@@ -1,0 +1,59 @@
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--border-color) 0%,
+    var(--bg-tertiary) 50%,
+    var(--border-color) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
+  display: inline-block;
+}
+
+.skeleton-text {
+  height: 1rem;
+  width: 100%;
+  margin-bottom: var(--space-2);
+}
+
+.skeleton-text-sm {
+  height: 0.875rem;
+}
+
+.skeleton-text-lg {
+  height: 1.25rem;
+}
+
+.skeleton-title {
+  height: 2rem;
+  width: 60%;
+  margin-bottom: var(--space-4);
+}
+
+.skeleton-circle {
+  border-radius: var(--radius-full);
+  width: 48px;
+  height: 48px;
+}
+
+.skeleton-card {
+  width: 100%;
+  height: 200px;
+  border-radius: var(--radius-xl);
+}
+
+.skeleton-avatar {
+  border-radius: var(--radius-full);
+  width: 40px;
+  height: 40px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}

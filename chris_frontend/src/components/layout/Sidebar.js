@@ -40,6 +40,7 @@ const Sidebar = () => {
             key={item.path}
             to={item.path}
             className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+            data-label={item.label}
           >
             <FontAwesomeIcon icon={item.icon} className="sidebar-icon" />
             <span className="sidebar-label">{item.label}</span>
@@ -47,7 +48,7 @@ const Sidebar = () => {
         ))}
       </nav>
       <div className="sidebar-footer">
-        <button className="sidebar-link" onClick={handleSignOut}>
+        <button className="sidebar-link" onClick={handleSignOut} data-label="Sign Out">
           <FontAwesomeIcon icon={faSignOutAlt} className="sidebar-icon" />
           <span className="sidebar-label">Sign Out</span>
         </button>

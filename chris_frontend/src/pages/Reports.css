@@ -1,79 +1,144 @@
 .reports {
-  padding: 2rem;
-  animation: fadeIn 0.5s ease;
+  padding: var(--space-8);
+  animation: fadeIn 0.6s var(--ease-out);
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .reports-header {
-  margin-bottom: 2rem;
+  margin-bottom: var(--space-8);
+  animation: fadeInDown 0.6s var(--ease-out);
 }
 
 .reports-header h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-extrabold);
+  margin-bottom: var(--space-2);
   color: var(--text-primary);
+  letter-spacing: -0.02em;
 }
 
 .reports-header p {
   color: var(--text-secondary);
-  font-size: 1rem;
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-relaxed);
 }
 
 .reports-content {
   display: grid;
-  gap: 2rem;
-  max-width: 1200px;
+  gap: var(--space-8);
+}
+
+.reports-content .card {
+  animation: slideInUp 0.6s var(--ease-out);
+  animation-fill-mode: both;
+}
+
+.reports-content .card:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.reports-content .card:nth-child(2) {
+  animation-delay: 0.2s;
 }
 
 .reports-content h2 {
-  margin: 0 0 1.5rem 0;
-  font-size: 1.25rem;
-  font-weight: 600;
+  margin: 0 0 var(--space-6) 0;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
   color: var(--text-primary);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-3);
+}
+
+.reports-content h2::before {
+  content: '';
+  width: 4px;
+  height: 24px;
+  background: var(--gradient-primary);
+  border-radius: var(--radius-full);
 }
 
 .reports-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .report-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.25rem;
-  background: var(--report-item-bg);
+  padding: var(--space-5);
+  background: var(--bg-secondary);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  transition: all 0.3s ease;
+  border-radius: var(--radius-xl);
+  transition: all var(--duration-normal) var(--ease-out);
+  gap: var(--space-4);
 }
 
 .report-item:hover {
-  transform: translateX(5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateX(8px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-color);
+}
+
+.report-info {
+  flex: 1;
+  min-width: 0;
 }
 
 .report-info h3 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1rem;
-  font-weight: 600;
+  margin: 0 0 var(--space-2) 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
   color: var(--text-primary);
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.report-item:hover .report-info h3 {
+  color: var(--primary-color);
 }
 
 .report-meta {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
   color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
-[data-theme="light"] .report-item {
-  --report-item-bg: #f9fafb;
+.report-meta::before {
+  content: '•';
+  color: var(--text-tertiary);
 }
 
-[data-theme="dark"] .report-item {
-  --report-item-bg: rgba(30, 30, 30, 0.5);
+/* Recharts custom styling for reports */
+.recharts-bar-rectangle {
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.recharts-bar-rectangle:hover {
+  filter: brightness(1.1);
+}
+
+@media (max-width: 768px) {
+  .reports {
+    padding: var(--space-4);
+  }
+  
+  .reports-header h1 {
+    font-size: var(--font-size-3xl);
+  }
+  
+  .report-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .report-item:hover {
+    transform: translateY(-4px);
+  }
 }
