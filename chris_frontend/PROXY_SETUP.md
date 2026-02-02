@@ -1,63 +1,53 @@
 # React App Proxy Configuration
 
-## Issue
-When the React development server is accessed through a reverse proxy (e.g., `/proxy/3000/`), assets fail to load with 404 errors because they reference absolute paths like `/static/js/bundle.js` instead of `/proxy/3000/static/js/bundle.js`.
+## ⚠️ UPDATED FIX AVAILABLE
 
-## Solution
-This has been fixed by configuring both the `PUBLIC_URL` environment variable and the `homepage` field in `package.json`.
+**See [PROXY_FIX_GUIDE.md](./PROXY_FIX_GUIDE.md) for the complete solution.**
 
-### Configuration Files Updated
+## Quick Summary
 
-1. **`.env`** - Added `PUBLIC_URL=/proxy/3000`
-2. **`package.json`** - Added `"homepage": "/proxy/3000"`
+### Issue
+When the React development server is accessed through a reverse proxy (e.g., `/proxy/3000/`), assets fail to load because:
+- The dev server returns HTML instead of JS/CSS/JSON files
+- Assets are requested from `/static/...` instead of `/proxy/3000/static/...`
+- "Unexpected token '<'" errors appear in console
 
-### How It Works
+### Solution Applied
 
-- `PUBLIC_URL`: Tells Create React App to prefix all asset paths with this value
-- `homepage`: Used by webpack to configure the public path for bundled assets
+1. **Environment Variables** (`.env` and `.env.development`):
+   - `PUBLIC_URL=/proxy/3000` (NO `REACT_APP_` prefix!)
+   - `WDS_SOCKET_PATH=/proxy/3000/ws`
+   - `DANGEROUSLY_DISABLE_HOST_CHECK=true`
 
-### For Different Environments
+2. **package.json**:
+   - `"homepage": "/proxy/3000"`
+   - Updated start script with proper env vars
 
-**Development (behind proxy):**
-```bash
-PUBLIC_URL=/proxy/3000 npm start
-```
+3. **setupProxy.js**:
+   - Created at `src/setupProxy.js` for dev server configuration
 
-**Development (direct access):**
-```bash
-PUBLIC_URL=/ npm start
-# or
-unset PUBLIC_URL && npm start
-```
-
-**Production build:**
-```bash
-PUBLIC_URL=/proxy/3000 npm run build
-```
-
-### After Configuration Changes
-
-**Important:** After modifying `.env` or `package.json`, you must restart the development server for changes to take effect:
+### Critical Steps After Fix
 
 ```bash
-# Stop the current server (Ctrl+C)
-# Then restart:
+# 1. Stop the dev server (Ctrl+C)
+
+# 2. Clear webpack cache
+rm -rf node_modules/.cache
+
+# 3. Restart
 npm start
+
+# 4. Hard refresh browser (Ctrl+Shift+R)
 ```
 
-### Testing
+### Verify Fix Works
 
-1. Restart the dev server
-2. Access the app through the proxy URL
-3. Check browser DevTools Network tab - assets should load from `/proxy/3000/static/...`
-4. Verify no 404 errors for bundle.js or other assets
+1. Open browser DevTools → Network tab
+2. Check assets load from `/proxy/3000/static/js/bundle.js` (not `/static/js/bundle.js`)
+3. Verify response is JavaScript (not HTML)
+4. No "Unexpected token '<'" errors in console
 
-### Troubleshooting
+## Full Documentation
 
-If assets still fail to load:
-
-1. Clear browser cache (hard refresh: Ctrl+Shift+R)
-2. Verify `PUBLIC_URL` is set in `.env`
-3. Verify `homepage` is set in `package.json`
-4. Check that the dev server was restarted after config changes
-5. Inspect the HTML source - script/link tags should use `/proxy/3000/` prefix
+For detailed troubleshooting, testing procedures, and production build instructions, see:
+**[PROXY_FIX_GUIDE.md](./PROXY_FIX_GUIDE.md)**

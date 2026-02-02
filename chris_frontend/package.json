@@ -19,7 +19,7 @@
     "zustand": "^4.4.7"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "PORT=3000 DANGEROUSLY_DISABLE_HOST_CHECK=true WDS_SOCKET_PATH=/proxy/3000/ws react-scripts start",
     "build": "react-scripts build",
     "test": "CI=true react-scripts test",
     "eject": "react-scripts eject"
