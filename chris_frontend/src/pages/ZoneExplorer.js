@@ -24,7 +24,8 @@ const ZoneExplorer = () => {
   useEffect(() => {
     const fetchGeoData = async () => {
       try {
-        const response = await api.get('map/sponge-zones/', {
+        // Note: No leading slash, baseURL already includes /api/v1/
+        const response = await api.get('map/sponge-zones', {
           params: { limit: 100 }
         });
         
@@ -72,7 +73,8 @@ const ZoneExplorer = () => {
           if (feature.id || feature.properties.zone_id) {
             try {
               const zoneId = feature.id || feature.properties.zone_id;
-              const response = await api.get(`map/sponge-zones/${zoneId}/details/`);
+              // Note: No leading slash, baseURL already includes /api/v1/
+              const response = await api.get(`map/sponge-zones/${zoneId}/details`);
               
               if (response.data?.success && response.data?.data?.properties) {
                 setSelectedZone(response.data.data.properties);

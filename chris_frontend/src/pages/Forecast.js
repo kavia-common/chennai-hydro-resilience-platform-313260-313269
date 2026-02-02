@@ -79,7 +79,8 @@ const Forecast = () => {
     }, 1000);
 
     try {
-      const response = await api.post('forecast/', {
+      // Note: No leading slash, baseURL already includes /api/v1/
+      const response = await api.post('forecast', {
         years: parseInt(formData.years),
         include_climate_factors: formData.include_climate_factors,
       }, {

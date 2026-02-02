@@ -35,7 +35,8 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       try {
         // Fetch citywide risk data from backend
-        const response = await api.get('citywide-risk/', {
+        // Note: No leading slash, baseURL already includes /api/v1/
+        const response = await api.get('citywide-risk', {
           params: { limit: 10 }
         });
         

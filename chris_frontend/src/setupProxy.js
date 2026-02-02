@@ -5,6 +5,10 @@
  * CRITICAL FIX: Prevents 304 Not Modified responses that serve cached HTML
  * instead of actual JS/JSON content under /proxy/3000 path.
  * 
+ * NOTE: This proxy configuration ONLY affects the webpack dev server serving
+ * frontend assets. Backend API calls to port 3001 are made directly by the
+ * browser and are NOT affected by this proxy setup.
+ * 
  * @param {object} app - Express app instance from webpack-dev-server
  */
 module.exports = function(app) {
