@@ -25,7 +25,7 @@ const ZoneExplorer = () => {
     const fetchGeoData = async () => {
       try {
         // API client will construct: https://host:3001/api/v1/map/sponge-zones?limit=100
-        const response = await api.get('map/sponge-zones', {
+        const response = await api.get('map/sponge-zones/', {
           params: { limit: 100 }
         });
         

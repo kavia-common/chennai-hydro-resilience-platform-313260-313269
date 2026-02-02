@@ -12,8 +12,8 @@ import { getApiBaseURL } from '../config/apiConfig';
 // Get the validated base URL (e.g., https://host:3001)
 const BASE_URL = getApiBaseURL().replace(/\/+$/, ''); // Remove trailing slash
 const API_PREFIX = '/api/v1';
-console.log('[API Client] Backend URL configured:', BASE_URL);
-console.log('[API Client] Full API base:', `${BASE_URL}${API_PREFIX}`);
+
+console.log('[API Client] Backend URL configured:', BASE_URL + API_PREFIX + '/');
 
 // Validate that base URL is HTTPS
 if (BASE_URL.startsWith('http://')) {
@@ -41,9 +41,9 @@ api.interceptors.request.use(
     // Start timing
     config.metadata = { startTime: Date.now() };
     
-    // CRITICAL: Construct absolute URL manually
+    // CRITICAL: Construct absolute URL manually to prevent axios from re-parsing
     // Input: config.url = 'citywide-risk' or '/citywide-risk' or 'map/sponge-zones'
-    // Output: https://host:3001/api/v1/citywide-risk
+    // Output: https://host:3001/api/v1/citywide-risk?param=value
     
     let path = (config.url || '').trim();
     
@@ -57,39 +57,38 @@ api.interceptors.request.use(
       path = path.substring(0, path.length - 1);
     }
     
-    // Build the full URL: https://host:3001/api/v1/path
-    let fullUrl = `${BASE_URL}${API_PREFIX}/${path}`;
+    // Build the full URL WITHOUT query params first
+    const fullUrlBase = `${BASE_URL}${API_PREFIX}/${path}`;
     
-    // Handle query parameters if present
+    // CRITICAL FIX: Build URL object to properly encode params
+    const urlObj = new URL(fullUrlBase);
+    
+    // Add query parameters to URL object (ensures proper encoding)
     if (config.params && Object.keys(config.params).length > 0) {
-      const searchParams = new URLSearchParams();
       Object.keys(config.params).forEach(key => {
         const value = config.params[key];
         if (value !== null && value !== undefined) {
-          searchParams.append(key, value);
+          urlObj.searchParams.append(key, String(value));
         }
       });
-      const queryString = searchParams.toString();
-      if (queryString) {
-        fullUrl = `${fullUrl}?${queryString}`;
-      }
     }
     
-    // Final validation
-    if (!fullUrl.startsWith('https://')) {
-      throw new Error('[API Client] CRITICAL: Constructed URL is not HTTPS: ' + fullUrl);
+    // Get final URL string from URL object
+    const finalUrl = urlObj.toString();
+    
+    // Final validation - CRITICAL for mixed-content prevention
+    if (!finalUrl.startsWith('https://')) {
+      throw new Error('[API Client] CRITICAL: Constructed URL is not HTTPS: ' + finalUrl);
     }
-    if (!fullUrl.includes(':3001')) {
-      throw new Error('[API Client] CRITICAL: Constructed URL missing port 3001: ' + fullUrl);
+    if (!finalUrl.includes(':3001')) {
+      throw new Error('[API Client] CRITICAL: Constructed URL missing port 3001: ' + finalUrl);
     }
     
     // Log the request
-    console.log(`[API Request] ${config.method?.toUpperCase()} ${fullUrl}`);
+    console.log(`[API Request] ${config.method?.toUpperCase()} ${finalUrl}`);
     
-    // CRITICAL: Replace config.url with the full absolute URL
-    config.url = fullUrl;
-    
-    // CRITICAL: Clear these to prevent axios from modifying the URL
+    // CRITICAL: Set the complete URL and clear fields that axios might use to reconstruct
+    config.url = finalUrl;
     config.baseURL = undefined;
     config.params = undefined; // Already encoded in URL
     
