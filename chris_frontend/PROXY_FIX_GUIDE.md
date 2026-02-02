@@ -77,6 +77,32 @@ View page source and check:
 
 ## Troubleshooting
 
+### Issue: Getting "Unexpected token '<'" or 304 Not Modified serving HTML
+
+**Symptoms:**
+- Browser console shows `Uncaught SyntaxError: Unexpected token '<'` in bundle.js
+- Network tab shows `304 Not Modified` for JS/JSON files
+- Same ETag for different files (bundle.js, manifest.json, index.html)
+- HTML content returned instead of JavaScript
+
+**Root Cause:**
+Webpack dev server returns the same ETag for all requests under the proxy path, causing browsers to serve cached HTML for JS/JSON files.
+
+**Solution:**
+1. Apply the cache fix in `src/setupProxy.js` (adds no-cache headers + MIME types)
+2. Clear all caches: `rm -rf node_modules/.cache build`
+3. Hard refresh browser with DevTools cache disabled
+4. See `PROXY_CACHE_FIX.md` for detailed troubleshooting
+
+**Quick Fix:**
+```bash
+# Clear caches and restart
+rm -rf node_modules/.cache
+npm start
+
+# In browser: Ctrl+Shift+R (hard refresh)
+```
+
 ### Issue: Assets still load from `/static/...` instead of `/proxy/3000/static/...`
 
 **Solution:**
