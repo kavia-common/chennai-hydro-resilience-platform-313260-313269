@@ -25,7 +25,9 @@
     "test": "CI=true react-app-rewired test",
     "eject": "react-scripts eject",
     "clean": "rm -rf node_modules/.cache build",
-    "restart": "npm run clean && npm start"
+    "restart": "npm run clean && npm start",
+    "validate-api": "bash validate-api-setup.sh",
+    "check-health": "curl -s ${REACT_APP_API_BASE:-http://localhost:3001}/api/v1/health | json_pp"
   },
   "eslintConfig": {
     "extends": "react-app"
