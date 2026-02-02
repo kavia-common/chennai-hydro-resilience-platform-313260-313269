@@ -80,7 +80,7 @@ const Forecast = () => {
 
     try {
       // API client will construct: https://host:3001/api/v1/forecast
-      const response = await api.post('forecast/', {
+      const response = await api.post('forecast', {
         years: parseInt(formData.years),
         include_climate_factors: formData.include_climate_factors,
       }, {

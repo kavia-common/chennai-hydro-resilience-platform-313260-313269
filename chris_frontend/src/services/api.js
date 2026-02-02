@@ -5,92 +5,62 @@ import { getApiBaseURL } from '../config/apiConfig';
 // PUBLIC_INTERFACE
 /**
  * Axios instance configured for CHRIS backend API.
- * Uses fully absolute URLs to prevent any axios URL resolution issues.
+ * Uses baseURL + relative paths to ensure proper HTTPS URL construction.
  * All requests MUST use HTTPS to port 3001 to avoid mixed-content errors.
  */
 
 // Get the validated base URL (e.g., https://host:3001)
-const BASE_URL = getApiBaseURL().replace(/\/+$/, ''); // Remove trailing slash
+const BASE_URL = getApiBaseURL();
 const API_PREFIX = '/api/v1';
 
-console.log('[API Client] Backend URL configured:', BASE_URL + API_PREFIX + '/');
+// Construct the full baseURL for axios (e.g., https://host:3001/api/v1)
+const FULL_BASE_URL = `${BASE_URL}${API_PREFIX}`;
+
+console.log('[API Client] Backend URL configured:', FULL_BASE_URL);
 
 // Validate that base URL is HTTPS
-if (BASE_URL.startsWith('http://')) {
-  throw new Error('[API Client] CRITICAL: Cannot use HTTP base URL in HTTPS context');
+if (!FULL_BASE_URL.startsWith('https://')) {
+  throw new Error('[API Client] CRITICAL: Base URL must use HTTPS, got: ' + FULL_BASE_URL);
 }
 
 // Validate port 3001 is present
-if (!BASE_URL.includes(':3001')) {
-  throw new Error('[API Client] CRITICAL: Base URL missing port 3001: ' + BASE_URL);
+if (!FULL_BASE_URL.includes(':3001')) {
+  throw new Error('[API Client] CRITICAL: Base URL missing port 3001: ' + FULL_BASE_URL);
 }
 
-// Create axios instance WITHOUT baseURL to prevent any automatic URL construction
+// Create axios instance WITH baseURL set
+// This is the correct way to use axios - let it handle URL joining
 const api = axios.create({
+  baseURL: FULL_BASE_URL,
   timeout: 120000, // 120 seconds
   headers: {
     'Content-Type': 'application/json',
   },
   withCredentials: false,
-  // CRITICAL: Do NOT set baseURL - we construct absolute URLs manually
 });
 
-// Request interceptor to inject auth token and ensure absolute URLs
+// Request interceptor to inject auth token and log requests
 api.interceptors.request.use(
   async (config) => {
     // Start timing
     config.metadata = { startTime: Date.now() };
     
-    // CRITICAL: Construct absolute URL manually to prevent axios from re-parsing
-    // Input: config.url = 'citywide-risk' or '/citywide-risk' or 'map/sponge-zones'
-    // Output: https://host:3001/api/v1/citywide-risk?param=value
-    
-    let path = (config.url || '').trim();
-    
-    // Remove leading slash if present
-    if (path.startsWith('/')) {
-      path = path.substring(1);
+    // Normalize the URL path
+    // Remove leading slash if present (baseURL already has the path)
+    if (config.url && config.url.startsWith('/')) {
+      config.url = config.url.substring(1);
     }
     
-    // Remove trailing slash if present
-    if (path.endsWith('/')) {
-      path = path.substring(0, path.length - 1);
+    // Remove trailing slash from URL
+    if (config.url && config.url.endsWith('/')) {
+      config.url = config.url.substring(0, config.url.length - 1);
     }
     
-    // Build the full URL WITHOUT query params first
-    const fullUrlBase = `${BASE_URL}${API_PREFIX}/${path}`;
-    
-    // CRITICAL FIX: Build URL object to properly encode params
-    const urlObj = new URL(fullUrlBase);
-    
-    // Add query parameters to URL object (ensures proper encoding)
-    if (config.params && Object.keys(config.params).length > 0) {
-      Object.keys(config.params).forEach(key => {
-        const value = config.params[key];
-        if (value !== null && value !== undefined) {
-          urlObj.searchParams.append(key, String(value));
-        }
-      });
-    }
-    
-    // Get final URL string from URL object
-    const finalUrl = urlObj.toString();
-    
-    // Final validation - CRITICAL for mixed-content prevention
-    if (!finalUrl.startsWith('https://')) {
-      throw new Error('[API Client] CRITICAL: Constructed URL is not HTTPS: ' + finalUrl);
-    }
-    if (!finalUrl.includes(':3001')) {
-      throw new Error('[API Client] CRITICAL: Constructed URL missing port 3001: ' + finalUrl);
-    }
+    // Construct the full URL for logging
+    const fullUrl = `${FULL_BASE_URL}/${config.url || ''}`;
     
     // Log the request
-    console.log(`[API Request] ${config.method?.toUpperCase()} ${finalUrl}`);
-    
-    // CRITICAL: Set the complete URL and clear fields that axios might use to reconstruct
-    config.url = finalUrl;
-    config.baseURL = undefined;
-    config.params = undefined; // Already encoded in URL
+    console.log(`[API Request] ${config.method?.toUpperCase()} ${fullUrl}`, config.params || '');
     
     // Inject auth token
     try {
@@ -118,7 +88,7 @@ api.interceptors.response.use(
     // Calculate and log duration
     if (response.config.metadata?.startTime) {
       const duration = Date.now() - response.config.metadata.startTime;
-      console.log(`[API Response] ${response.config.method?.toUpperCase()} ${response.config.url} - ${duration}ms - Status: ${response.status}`)
+      console.log(`[API Response] ${response.config.method?.toUpperCase()} ${response.config.url} - ${duration}ms - Status: ${response.status}`);
       response.duration = duration;
     }
     return response;
