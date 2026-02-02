@@ -35,9 +35,9 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       try {
         // Fetch citywide risk data from backend
-        // CRITICAL: No leading slash - baseURL is https://host:3001/api/v1
-        // This becomes: https://host:3001/api/v1/citywide-risk
-        const response = await api.get('citywide-risk/', {
+        // CRITICAL: No leading or trailing slash - baseURL is https://host:3001/api/v1
+        // This becomes: https://host:3001/api/v1/citywide-risk?limit=10
+        const response = await api.get('citywide-risk', {
           params: { limit: 10 }
         });
         
