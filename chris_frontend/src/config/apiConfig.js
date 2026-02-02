@@ -8,7 +8,7 @@
 /**
  * Get the validated and normalized backend API base URL.
  * Enforces HTTPS protocol and proper port 3001.
- * @returns {string} The complete base URL including protocol, host, port, and /api/v1/ prefix (WITH trailing slash for axios)
+ * @returns {string} The complete base URL including protocol, host, and port (WITHOUT /api/v1/ or trailing slash)
  */
 export const getApiBaseURL = () => {
   // Priority order: REACT_APP_API_BASE > REACT_APP_BACKEND_URL
@@ -16,13 +16,13 @@ export const getApiBaseURL = () => {
   
   if (!baseUrl) {
     console.error('[API Config] No backend URL configured in environment variables!');
-    // Fallback to relative path (will work with proxy)
-    return '/api/v1/';
+    // Fallback - in production this should never happen
+    throw new Error('Backend URL not configured');
   }
 
   // Step 1: Clean up the URL - remove trailing slashes and /api/v1 suffix
   baseUrl = baseUrl.trim().replace(/\/+$/, '');
-  baseUrl = baseUrl.replace(/\/api\/v1\/?$/, '');
+  baseUrl = baseUrl.replace(/\/api\\/v1\\/?$/, '');
 
   // Step 2: Parse and validate the URL
   try {
@@ -47,9 +47,9 @@ export const getApiBaseURL = () => {
       urlObj.port = '3001';
     }
 
-    // Step 5: Construct final URL - origin + /api/v1/ (WITH trailing slash for axios)
-    // The trailing slash is CRITICAL to prevent axios from mishandling query parameters
-    const finalUrl = `${urlObj.origin}/api/v1/`;
+    // Step 5: Construct final URL - origin only (no path, no trailing slash)
+    // Format: https://host:3001
+    const finalUrl = urlObj.origin;
 
     // Step 6: Final validation
     if (!finalUrl.startsWith('https://')) {
@@ -65,7 +65,7 @@ export const getApiBaseURL = () => {
 
   } catch (error) {
     console.error('[API Config] Failed to parse backend URL:', baseUrl, error);
-    return '/api/v1/'; // Fallback to relative
+    throw error;
   }
 };
 

@@ -24,8 +24,8 @@ const ZoneExplorer = () => {
   useEffect(() => {
     const fetchGeoData = async () => {
       try {
-        // baseURL is https://host:3001/api/v1/ (with trailing slash)
-        // url is 'map/sponge-zones' (no slashes)
+        // baseURL is https://host:3001 (no trailing slash)
+        // url will be /api/v1/map/sponge-zones (added by interceptor)
         // Result: https://host:3001/api/v1/map/sponge-zones?limit=100
         const response = await api.get('map/sponge-zones', {
           params: { limit: 100 }
@@ -75,8 +75,8 @@ const ZoneExplorer = () => {
           if (feature.id || feature.properties.zone_id) {
             try {
               const zoneId = feature.id || feature.properties.zone_id;
-              // baseURL is https://host:3001/api/v1/ (with trailing slash)
-              // url is 'map/sponge-zones/{zoneId}/details' (no slashes)
+              // baseURL is https://host:3001 (no trailing slash)
+              // url will be /api/v1/map/sponge-zones/{zoneId}/details (added by interceptor)
               const response = await api.get(`map/sponge-zones/${zoneId}/details`);
               
               if (response.data?.success && response.data?.data?.properties) {

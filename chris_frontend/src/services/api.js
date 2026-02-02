@@ -10,13 +10,18 @@ import { getApiBaseURL } from '../config/apiConfig';
  * Authorization token (Supabase JWT) is automatically injected for protected routes.
  */
 
-// Get the validated base URL (with /api/v1/ and trailing slash)
-const BASE_URL = getApiBaseURL();
+// Get the validated base URL (without trailing slash for proper URL.resolve behavior)
+const BASE_URL = getApiBaseURL().replace(/\/+$/, ''); // Remove trailing slash
 console.log('[API Client] Backend URL configured:', BASE_URL);
 
 // Validate that base URL is HTTPS
 if (BASE_URL.startsWith('http://')) {
   throw new Error('[API Client] CRITICAL: Cannot use HTTP base URL in HTTPS context');
+}
+
+// Validate port 3001 is present
+if (!BASE_URL.includes(':3001')) {
+  throw new Error('[API Client] CRITICAL: Base URL missing port 3001: ' + BASE_URL);
 }
 
 // Create axios instance with strict configuration
@@ -27,20 +32,8 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   withCredentials: false,
-  // CRITICAL: Prevent axios from using a proxy or transforming URLs
+  // CRITICAL: Disable proxy to prevent URL transformation
   proxy: false,
-  // Ensure params are serialized correctly
-  paramsSerializer: {
-    serialize: (params) => {
-      const searchParams = new URLSearchParams();
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) {
-          searchParams.append(key, value);
-        }
-      });
-      return searchParams.toString();
-    }
-  }
 });
 
 // Request interceptor to inject auth token and validate URLs
@@ -49,39 +42,34 @@ api.interceptors.request.use(
     // Start timing
     config.metadata = { startTime: Date.now() };
     
-    // CRITICAL FIX: Normalize the URL path
-    // Remove leading slash from config.url if present (baseURL already has trailing slash)
-    if (config.url && config.url.startsWith('/')) {
-      config.url = config.url.substring(1);
+    // CRITICAL FIX: Manually construct the full URL to ensure proper HTTPS + port
+    // This prevents axios from using URL.resolve which can drop the port
+    
+    // Normalize the path: ensure it starts with / and is relative to /api/v1/
+    let path = config.url || '';
+    
+    // Remove leading slash if present
+    if (path.startsWith('/')) {
+      path = path.substring(1);
     }
     
-    // Remove trailing slash from config.url if present
-    if (config.url && config.url.endsWith('/')) {
-      config.url = config.url.substring(0, config.url.length - 1);
+    // Remove trailing slash if present
+    if (path.endsWith('/')) {
+      path = path.substring(0, path.length - 1);
     }
     
-    // CRITICAL: Force baseURL to always be our validated URL
+    // Construct the full URL manually: BASE_URL/api/v1/path
+    // BASE_URL = https://host:3001
+    const fullUrl = `${BASE_URL}/api/v1/${path}`;
+    
+    // CRITICAL: Override both baseURL and url to prevent axios from recombining them incorrectly
     config.baseURL = BASE_URL;
+    config.url = `/api/v1/${path}`;
     
-    // Validate baseURL hasn't been corrupted
-    if (!config.baseURL.includes(':3001')) {
-      console.error('[API Client] CRITICAL: baseURL missing port 3001, forcing correct URL');
-      config.baseURL = BASE_URL;
-    }
-    
-    if (config.baseURL.startsWith('http://')) {
-      console.error('[API Client] CRITICAL: HTTP baseURL detected, forcing HTTPS');
-      config.baseURL = config.baseURL.replace('http://', 'https://');
-    }
-    
-    // Construct the full URL for logging and validation
-    // baseURL ends with '/', config.url doesn't start with '/'
-    const fullUrl = config.baseURL + (config.url || '');
-    
-    // Final validation: ensure full URL is HTTPS with port 3001
-    if (fullUrl.startsWith('http://')) {
-      const error = new Error('Mixed content blocked: HTTP request from HTTPS page');
-      console.error('[API Client] BLOCKED HTTP REQUEST:', {
+    // Validate the constructed URL
+    if (!fullUrl.startsWith('https://')) {
+      const error = new Error('CRITICAL: Constructed URL is not HTTPS: ' + fullUrl);
+      console.error('[API Client] URL construction error:', {
         baseURL: config.baseURL,
         url: config.url,
         fullUrl: fullUrl,
@@ -89,8 +77,14 @@ api.interceptors.request.use(
       throw error;
     }
     
-    if (!fullUrl.includes(':3001/api/v1')) {
-      console.error('[API Client] WARNING: URL missing port 3001 or /api/v1 path:', fullUrl);
+    if (!fullUrl.includes(':3001')) {
+      const error = new Error('CRITICAL: Constructed URL missing port 3001: ' + fullUrl);
+      console.error('[API Client] URL construction error:', {
+        baseURL: config.baseURL,
+        url: config.url,
+        fullUrl: fullUrl,
+      });
+      throw error;
     }
     
     // Log the request with params if present
@@ -126,7 +120,9 @@ api.interceptors.response.use(
     // Calculate and log duration
     if (response.config.metadata?.startTime) {
       const duration = Date.now() - response.config.metadata.startTime;
-      const fullUrl = response.config.baseURL + (response.config.url || '');
+      const baseURL = response.config.baseURL || BASE_URL;
+      const path = response.config.url || '';
+      const fullUrl = `${baseURL}${path}`;
       const urlWithParams = response.config.params 
         ? `${fullUrl}?${new URLSearchParams(response.config.params).toString()}`
         : fullUrl;
@@ -139,13 +135,13 @@ api.interceptors.response.use(
     // Calculate duration
     if (error.config?.metadata?.startTime) {
       const duration = Date.now() - error.config.metadata.startTime;
-      const fullUrl = error.config?.baseURL 
-        ? error.config.baseURL + (error.config.url || '')
-        : 'unknown';
+      const baseURL = error.config?.baseURL || BASE_URL;
+      const path = error.config?.url || '';
+      const fullUrl = `${baseURL}${path}`;
       const urlWithParams = error.config?.params 
         ? `${fullUrl}?${new URLSearchParams(error.config.params).toString()}`
         : fullUrl;
-      console.error(`[API Error] ${error.config?.method?.toUpperCase()} ${urlWithParams} - ${duration}ms - Status: ${error.response?.status || 'Network Error'}`)
+      console.error(`[API Error] ${error.config?.method?.toUpperCase()} ${urlWithParams} - ${duration}ms - Status: ${error.response?.status || 'Network Error'}`);
       error.duration = duration;
     }
     

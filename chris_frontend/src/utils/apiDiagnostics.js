@@ -29,12 +29,12 @@ export const testAPIConnection = async () => {
     value: results.baseURL.split('://')[0],
   });
   
-  // Test 2: Verify base URL ends with /api/v1/
-  const hasAPIPath = results.baseURL.includes('/api/v1/');
+  // Test 2: Verify base URL contains port 3001
+  const hasPort3001 = results.baseURL.includes(':3001');
   results.tests.push({
-    name: 'API Path',
-    passed: hasAPIPath,
-    message: hasAPIPath ? 'Correct API path' : 'WARNING: Missing /api/v1/ in path',
+    name: 'Backend Port',
+    passed: hasPort3001,
+    message: hasPort3001 ? 'Correct backend port (3001)' : 'WARNING: Missing port 3001',
     value: results.baseURL,
   });
   
@@ -106,7 +106,7 @@ export const testEndpoint = async (method, endpoint, data = {}) => {
   const result = {
     method,
     endpoint,
-    fullURL: api.defaults.baseURL + endpoint,
+    fullURL: `${api.defaults.baseURL}/api/v1/${endpoint}`,
     success: false,
     error: null,
     duration: 0,
