@@ -22,7 +22,7 @@ export const getApiBaseURL = () => {
 
   // Step 1: Clean up the URL - remove trailing slashes and /api/v1 suffix
   baseUrl = baseUrl.trim().replace(/\/+$/, '');
-  baseUrl = baseUrl.replace(/\/api\\/v1\\/?$/, '');
+  baseUrl = baseUrl.replace(/\/api\/v1\/?$/, '');
 
   // Step 2: Parse and validate the URL
   try {

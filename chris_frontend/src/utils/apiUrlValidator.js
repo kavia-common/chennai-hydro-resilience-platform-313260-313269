@@ -139,8 +139,31 @@ export const logApiConfig = () => {
   return config;
 };
 
+// PUBLIC_INTERFACE
+/**
+ * Enables monitoring of API URLs.
+ * Validates current config and logs to console.
+ */
+export const enableAPIUrlMonitoring = () => {
+  console.log('[API Validator] URL Monitoring Enabled');
+  logApiConfig();
+  
+  // Basic check of the current environment variable
+  const currentBase = process.env.REACT_APP_API_BASE || process.env.REACT_APP_BACKEND_URL;
+  if (currentBase) {
+     // We append a fake path just to validate the base structure
+     const validation = validateApiUrl(`${currentBase}/api/v1/test`);
+     if (!validation.isValid) {
+       console.warn('[API Validator] Configured API Base URL has issues:', validation.issues);
+     } else {
+       console.log('[API Validator] Configured API Base URL appears valid.');
+     }
+  }
+};
+
 export default {
   validateApiUrl,
   testApiConnectivity,
-  logApiConfig
+  logApiConfig,
+  enableAPIUrlMonitoring // <--- Added this to default export as well
 };
