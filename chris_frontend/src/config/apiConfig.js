@@ -95,7 +95,9 @@ if (validatedUrl.startsWith('http://') && !validatedUrl.startsWith('https://')) 
   throw error;
 }
 
-export default {
+const apiConfig = {
   getApiBaseURL,
   getApiConfig,
 };
+
+export default apiConfig;

@@ -161,9 +161,11 @@ export const enableAPIUrlMonitoring = () => {
   }
 };
 
-export default {
+const apiUrlValidator = {
   validateApiUrl,
   testApiConnectivity,
   logApiConfig,
-  enableAPIUrlMonitoring // <--- Added this to default export as well
+  enableAPIUrlMonitoring
 };
+
+export default apiUrlValidator;

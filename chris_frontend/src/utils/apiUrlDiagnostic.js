@@ -164,8 +164,10 @@ export const logApiDiagnostics = () => {
   return diagnostics;
 };
 
-export default {
+const apiUrlDiagnostic = {
   runApiDiagnostics,
   validateApiUrl,
   logApiDiagnostics,
 };
+
+export default apiUrlDiagnostic;
