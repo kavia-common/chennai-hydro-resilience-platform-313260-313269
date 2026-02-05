@@ -4,7 +4,7 @@
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border-radius: var(--radius-xl);
   padding: var(--space-6);
-  border: 1px solid var(--border-color);
+  border: 1.5px solid var(--border-color);
   transition: all var(--duration-normal) var(--ease-out);
   box-shadow: var(--shadow-md);
   position: relative;
@@ -24,7 +24,8 @@
 .card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-xl);
-  border-color: var(--border-color-strong);
+  border-color: var(--primary-color);
+  border-width: 2px;
 }
 
 .card-clickable {
@@ -74,4 +75,26 @@
     opacity: 1;
     transform: scale(1);
   }
+}
+
+/* High-Contrast Accessibility */
+@media (prefers-contrast: high) {
+  .card {
+    border-width: 2px;
+    border-color: var(--border-color-strong);
+  }
+  
+  .card:hover {
+    border-width: 3px;
+  }
+  
+  .card::before {
+    display: none;
+  }
+}
+
+/* Focus visible for keyboard navigation */
+.card:focus-visible {
+  outline: 3px solid var(--primary-color);
+  outline-offset: 3px;
 }

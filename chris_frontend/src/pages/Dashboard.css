@@ -141,13 +141,15 @@
 }
 
 .stat-trend.trend-up {
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.1);
+  color: #1b5e20;  /* WCAG AA+ compliant dark green */
+  background: rgba(27, 94, 32, 0.12);
+  font-weight: var(--font-weight-bold);
 }
 
 .stat-trend.trend-down {
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.1);
+  color: #b71c1c;  /* WCAG AA+ compliant dark red */
+  background: rgba(183, 28, 28, 0.12);
+  font-weight: var(--font-weight-bold);
 }
 
 .stat-sparkline {
@@ -203,22 +205,26 @@
 /* Custom tooltip styling */
 .custom-tooltip {
   background: var(--modal-bg);
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
-  box-shadow: var(--shadow-xl);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
 .tooltip-label {
   font-weight: var(--font-weight-semibold);
   color: var(--text-primary);
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
   font-size: var(--font-size-sm);
+  border-bottom: 2px solid var(--border-color);
 }
 
 .tooltip-item {
   font-size: var(--font-size-sm);
   margin: var(--space-1) 0;
+  font-weight: var(--font-weight-semibold);
+  padding: var(--space-1) 0;
 }
 
 /* Risk legend */
@@ -236,6 +242,13 @@
   align-items: center;
   gap: var(--space-2);
   font-size: var(--font-size-sm);
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.legend-item:hover {
+  background: var(--hover-bg);
 }
 
 .legend-color {
@@ -243,6 +256,8 @@
   height: 16px;
   border-radius: var(--radius-sm);
   flex-shrink: 0;
+  border: 2px solid var(--border-color);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
 }
 
 .legend-text {
@@ -286,6 +301,58 @@
 
 .recharts-tooltip-item {
   color: var(--text-secondary) !important;
+}
+
+/* High-Contrast Accessibility Enhancements */
+.chart-card:focus-within {
+  outline: 3px solid var(--primary-color);
+  outline-offset: 4px;
+}
+
+/* Enhanced stat card accessibility */
+.stat-card {
+  border-width: 1.5px;
+}
+
+.stat-card:focus-within {
+  outline: 3px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .stat-card {
+    border-width: 2px;
+    border-color: var(--border-color-strong);
+  }
+  
+  .legend-color {
+    border-width: 3px;
+  }
+  
+  .stat-icon {
+    border: 2px solid var(--border-color);
+  }
+  
+  .chart-card {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .stat-card,
+  .chart-card {
+    animation: none;
+  }
+  
+  .stat-icon::before {
+    transition: none;
+  }
+  
+  .stat-value {
+    transition: none;
+  }
 }
 
 @media (max-width: 1024px) {

@@ -68,12 +68,17 @@
 .btn-primary:hover:not(:disabled) {
   background: var(--primary-hover);
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 8px 16px rgba(13, 93, 201, 0.4);
 }
 
 .btn-primary:active:not(:disabled) {
   transform: translateY(0);
   box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:focus-visible {
+  outline: 3px solid var(--primary-color);
+  outline-offset: 3px;
 }
 
 .btn-secondary {
@@ -92,6 +97,11 @@
   transform: translateY(0);
 }
 
+.btn-secondary:focus-visible {
+  outline: 3px solid var(--secondary-color);
+  outline-offset: 3px;
+}
+
 .btn-danger {
   background: var(--error-color);
   color: white;
@@ -99,13 +109,18 @@
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: var(--color-error-600);
+  background: var(--error-color);
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(239, 68, 68, 0.4);
+  box-shadow: 0 8px 16px rgba(183, 28, 28, 0.4);
 }
 
 .btn-danger:active:not(:disabled) {
   transform: translateY(0);
+}
+
+.btn-danger:focus-visible {
+  outline: 3px solid var(--error-color);
+  outline-offset: 3px;
 }
 
 .btn-ghost {
@@ -124,6 +139,11 @@
 
 .btn-ghost:active:not(:disabled) {
   transform: translateY(0);
+}
+
+.btn-ghost:focus-visible {
+  outline: 3px solid var(--primary-color);
+  outline-offset: 3px;
 }
 
 /* Loading spinner */
@@ -157,4 +177,37 @@
 
 .btn-icon-only.btn-large {
   padding: var(--space-4);
+}
+
+/* High-Contrast Accessibility */
+@media (prefers-contrast: high) {
+  .btn {
+    border: 2px solid currentColor;
+  }
+  
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+    border-color: transparent;
+  }
+  
+  .btn-ghost {
+    border-width: 2px;
+    border-color: var(--border-color-strong);
+  }
+}
+
+/* Enhanced focus visible for all buttons */
+.btn:focus-visible {
+  outline: 3px solid var(--focus-outline-color);
+  outline-offset: 3px;
+  z-index: 1;
+}
+
+/* Minimum touch target for mobile accessibility */
+@media (max-width: 768px) {
+  .btn {
+    min-height: var(--min-touch-target);
+    min-width: var(--min-touch-target);
+  }
 }
