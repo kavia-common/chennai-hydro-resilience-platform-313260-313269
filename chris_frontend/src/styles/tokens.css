@@ -57,6 +57,38 @@
   --color-gray-800: #1f2937;
   --color-gray-900: #111827;
 
+  /* Blue-Only Chart Palette (GitHub-style) */
+  --chart-blue-100: #dbeafe;   /* Very light blue */
+  --chart-blue-200: #bfdbfe;   /* Light blue */
+  --chart-blue-300: #93c5fd;   /* Soft blue */
+  --chart-blue-400: #60a5fa;   /* Medium blue */
+  --chart-blue-500: #3b82f6;   /* Primary blue */
+  --chart-blue-600: #2563eb;   /* Strong blue */
+  --chart-blue-700: #1d4ed8;   /* Deep blue */
+  --chart-blue-800: #1e40af;   /* Dark blue */
+  --chart-blue-900: #1e3a8a;   /* Very dark blue */
+
+  /* Blue Variant Tokens for Charts */
+  --chart-color-primary: #2563eb;      /* Strong blue - main data series */
+  --chart-color-secondary: #60a5fa;    /* Medium blue - secondary series */
+  --chart-color-tertiary: #1d4ed8;     /* Deep blue - tertiary series */
+  --chart-color-quaternary: #93c5fd;   /* Soft blue - additional series */
+  --chart-color-accent: #0891b2;       /* Cyan-blue accent */
+
+  /* Risk Level Colors (Blue Gradients) */
+  --risk-low: #60a5fa;        /* Medium blue - low risk */
+  --risk-moderate: #2563eb;   /* Strong blue - moderate risk */
+  --risk-high: #1d4ed8;       /* Deep blue - high risk */
+  --risk-critical: #1e3a8a;   /* Very dark blue - critical risk */
+
+  /* Heatmap Colors (GitHub-style blue progression) */
+  --heatmap-empty: #ebedf0;
+  --heatmap-level-1: #c6e0ff;
+  --heatmap-level-2: #7cb3ff;
+  --heatmap-level-3: #3b82f6;
+  --heatmap-level-4: #1e40af;
+  --heatmap-level-5: #1e3a8a;
+
   /* Spacing Scale */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -236,4 +268,14 @@
   --blob-color-1: rgba(59, 130, 246, 0.08);
   --blob-color-2: rgba(6, 182, 212, 0.06);
   --blob-color-3: rgba(99, 102, 241, 0.05);
+
+  /* Adjust chart colors for dark theme */
+  --chart-color-primary: #60a5fa;
+  --chart-color-secondary: #93c5fd;
+  --chart-color-tertiary: #3b82f6;
+  
+  --risk-low: #93c5fd;
+  --risk-moderate: #60a5fa;
+  --risk-high: #3b82f6;
+  --risk-critical: #2563eb;
 }

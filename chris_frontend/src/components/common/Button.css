@@ -68,7 +68,7 @@
 .btn-primary:hover:not(:disabled) {
   background: var(--primary-hover);
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(13, 93, 201, 0.4);
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.4);
 }
 
 .btn-primary:active:not(:disabled) {
@@ -109,9 +109,9 @@
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: var(--error-color);
+  background: #dc2626;
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(183, 28, 28, 0.4);
+  box-shadow: 0 8px 16px rgba(220, 38, 38, 0.4);
 }
 
 .btn-danger:active:not(:disabled) {

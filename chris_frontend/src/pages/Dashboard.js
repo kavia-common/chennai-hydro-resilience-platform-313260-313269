@@ -15,7 +15,7 @@ import './Dashboard.css';
  * Dashboard page displaying comprehensive overview of flood risk metrics.
  * Features: KPI spark cards, multi-series time series, donut distribution, zone heatmap
  * Shows key statistics, charts, and recent alerts with modern visualizations.
- * Uses WCAG AA+ compliant high-contrast color palette for accessibility.
+ * Uses unified blue-only color palette for accessibility and visual consistency.
  */
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -34,23 +34,34 @@ const Dashboard = () => {
     sensors: [],
   });
 
-  // WCAG AA+ High-Contrast Color Palette for charts
-  // All colors meet 4.5:1 minimum contrast ratio on light backgrounds
+  // Blue-Only Color Palette (GitHub-style progression)
   const COLORS = {
-    primary: '#0847a6',      // Dark blue - 10.2:1 contrast
-    secondary: '#006d77',    // Dark teal - 8.5:1 contrast
-    success: '#1b5e20',      // Dark green - 9.8:1 contrast
-    warning: '#bf6e00',      // Dark amber - 6.2:1 contrast
-    danger: '#b71c1c',       // Dark red - 9.5:1 contrast
-    purple: '#4a148c',       // Dark purple - 11.2:1 contrast
-    indigo: '#1a237e',       // Dark indigo - 12.8:1 contrast
+    primary: '#2563eb',      // Strong blue
+    secondary: '#60a5fa',    // Medium blue
+    tertiary: '#1d4ed8',     // Deep blue
+    quaternary: '#93c5fd',   // Soft blue
+    accent: '#0891b2',       // Cyan-blue accent
+    light: '#bfdbfe',        // Light blue
+    veryLight: '#dbeafe',    // Very light blue
+    dark: '#1e40af',         // Dark blue
+    veryDark: '#1e3a8a',     // Very dark blue
   };
 
   const RISK_COLORS = {
-    Low: COLORS.success,      // Dark green for low risk
-    Moderate: COLORS.warning, // Dark amber for moderate risk
-    High: COLORS.danger,      // Dark red for high risk
-    Critical: '#6d0e0e',      // Very dark red for critical - 13.5:1 contrast
+    Low: COLORS.secondary,       // Medium blue - #60a5fa
+    Moderate: COLORS.primary,    // Strong blue - #2563eb
+    High: COLORS.tertiary,       // Deep blue - #1d4ed8
+    Critical: COLORS.veryDark,   // Very dark blue - #1e3a8a
+  };
+
+  // GitHub-style heatmap colors (blue progression)
+  const HEATMAP_COLORS = {
+    empty: '#ebedf0',
+    level1: '#c6e0ff',
+    level2: '#7cb3ff',
+    level3: '#3b82f6',
+    level4: '#1e40af',
+    level5: '#1e3a8a',
   };
 
   useEffect(() => {
@@ -180,11 +191,11 @@ const Dashboard = () => {
         <p>Comprehensive overview of flood risk and resilience metrics</p>
       </div>
 
-      {/* KPI Spark Cards */}
+      {/* KPI Spark Cards - Blue Theme */}
       <div className="stats-grid">
         <Card className="stat-card stat-card-spark">
           <div className="stat-main">
-            <div className="stat-icon" style={{ background: 'rgba(8, 71, 166, 0.15)' }}>
+            <div className="stat-icon" style={{ background: 'rgba(37, 99, 235, 0.15)' }}>
               <FontAwesomeIcon icon={faMapMarked} style={{ color: COLORS.primary }} />
             </div>
             <div className="stat-content">
@@ -207,8 +218,8 @@ const Dashboard = () => {
 
         <Card className="stat-card stat-card-spark">
           <div className="stat-main">
-            <div className="stat-icon" style={{ background: 'rgba(183, 28, 28, 0.15)' }}>
-              <FontAwesomeIcon icon={faExclamationTriangle} style={{ color: COLORS.danger }} />
+            <div className="stat-icon" style={{ background: 'rgba(29, 78, 216, 0.15)' }}>
+              <FontAwesomeIcon icon={faExclamationTriangle} style={{ color: COLORS.tertiary }} />
             </div>
             <div className="stat-content">
               <h3>High Risk Zones</h3>
@@ -222,7 +233,7 @@ const Dashboard = () => {
           <div className="stat-sparkline">
             <ResponsiveContainer width="100%" height={40}>
               <AreaChart data={sparklineData.risk.map((val, idx) => ({ value: val }))}>
-                <Area type="monotone" dataKey="value" stroke={COLORS.danger} fill={COLORS.danger} fillOpacity={0.3} />
+                <Area type="monotone" dataKey="value" stroke={COLORS.tertiary} fill={COLORS.tertiary} fillOpacity={0.3} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -230,7 +241,7 @@ const Dashboard = () => {
 
         <Card className="stat-card stat-card-spark">
           <div className="stat-main">
-            <div className="stat-icon" style={{ background: 'rgba(0, 109, 119, 0.15)' }}>
+            <div className="stat-icon" style={{ background: 'rgba(96, 165, 250, 0.15)' }}>
               <FontAwesomeIcon icon={faChartLine} style={{ color: COLORS.secondary }} />
             </div>
             <div className="stat-content">
@@ -253,8 +264,8 @@ const Dashboard = () => {
 
         <Card className="stat-card stat-card-spark">
           <div className="stat-main">
-            <div className="stat-icon" style={{ background: 'rgba(191, 110, 0, 0.15)' }}>
-              <FontAwesomeIcon icon={faCloudRain} style={{ color: COLORS.warning }} />
+            <div className="stat-icon" style={{ background: 'rgba(8, 145, 178, 0.15)' }}>
+              <FontAwesomeIcon icon={faCloudRain} style={{ color: COLORS.accent }} />
             </div>
             <div className="stat-content">
               <h3>Avg Risk Level</h3>
@@ -268,14 +279,14 @@ const Dashboard = () => {
           <div className="stat-sparkline">
             <ResponsiveContainer width="100%" height={40}>
               <LineChart data={sparklineData.rainfall.map((val, idx) => ({ value: val }))}>
-                <Line type="monotone" dataKey="value" stroke={COLORS.warning} strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="value" stroke={COLORS.accent} strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </Card>
       </div>
 
-      {/* Multi-Series Time Series Chart */}
+      {/* Multi-Series Time Series Chart - Blue Theme */}
       <div className="dashboard-charts">
         <Card className="chart-card">
           <h2>Multi-Series Risk Analysis</h2>
@@ -291,10 +302,10 @@ const Dashboard = () => {
                 yAxisId="left"
                 type="monotone" 
                 dataKey="riskScore" 
-                stroke={COLORS.danger} 
+                stroke={COLORS.tertiary} 
                 strokeWidth={3} 
                 name="Risk Score"
-                dot={{ r: 5, fill: COLORS.danger, strokeWidth: 2, stroke: '#ffffff' }}
+                dot={{ r: 5, fill: COLORS.tertiary, strokeWidth: 2, stroke: '#ffffff' }}
                 activeDot={{ r: 7, strokeWidth: 2 }}
               />
               <Line 
@@ -311,18 +322,18 @@ const Dashboard = () => {
                 yAxisId="left"
                 type="monotone" 
                 dataKey="confidence" 
-                stroke={COLORS.success} 
+                stroke={COLORS.secondary} 
                 strokeWidth={3} 
                 strokeDasharray="5 5"
                 name="Confidence %"
-                dot={{ r: 4, fill: COLORS.success, strokeWidth: 2, stroke: '#ffffff' }}
+                dot={{ r: 4, fill: COLORS.secondary, strokeWidth: 2, stroke: '#ffffff' }}
                 activeDot={{ r: 6, strokeWidth: 2 }}
               />
             </LineChart>
           </ResponsiveContainer>
         </Card>
 
-        {/* Risk Distribution (Donut) and Zone Heatmap */}
+        {/* Risk Distribution (Donut) and Zone Heatmap - Blue Theme */}
         <div className="charts-row">
           <Card className="chart-card chart-card-half">
             <h2>Risk Distribution</h2>

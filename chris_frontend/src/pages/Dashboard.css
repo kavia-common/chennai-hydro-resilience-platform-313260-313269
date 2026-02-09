@@ -141,14 +141,14 @@
 }
 
 .stat-trend.trend-up {
-  color: #1b5e20;  /* WCAG AA+ compliant dark green */
-  background: rgba(27, 94, 32, 0.12);
+  color: #1e40af;  /* Dark blue for upward trends */
+  background: rgba(30, 64, 175, 0.12);
   font-weight: var(--font-weight-bold);
 }
 
 .stat-trend.trend-down {
-  color: #b71c1c;  /* WCAG AA+ compliant dark red */
-  background: rgba(183, 28, 28, 0.12);
+  color: #60a5fa;  /* Medium blue for downward trends */
+  background: rgba(96, 165, 250, 0.12);
   font-weight: var(--font-weight-bold);
 }
 
@@ -198,17 +198,17 @@
   content: '';
   width: 4px;
   height: 24px;
-  background: var(--gradient-primary);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   border-radius: var(--radius-full);
 }
 
-/* Custom tooltip styling */
+/* Custom tooltip styling - Blue theme */
 .custom-tooltip {
   background: var(--modal-bg);
   border: 2px solid var(--border-color);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.25);
 }
 
 .tooltip-label {
@@ -227,7 +227,7 @@
   padding: var(--space-1) 0;
 }
 
-/* Risk legend */
+/* Risk legend - Blue theme */
 .risk-legend {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -248,7 +248,7 @@
 }
 
 .legend-item:hover {
-  background: var(--hover-bg);
+  background: rgba(37, 99, 235, 0.08);
 }
 
 .legend-color {
@@ -257,7 +257,7 @@
   border-radius: var(--radius-sm);
   flex-shrink: 0;
   border: 2px solid var(--border-color);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.1);
 }
 
 .legend-text {
