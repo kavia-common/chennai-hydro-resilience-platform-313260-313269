@@ -1,0 +1,37 @@
+{
+  "name": "chris_frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 3000",
+    "test": "vitest",
+    "test:ci": "vitest run"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
+    "framer-motion": "^12.4.7",
+    "leaflet": "^1.9.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^6.26.2",
+    "recharts": "^2.13.0"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.0.1",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/leaflet": "^1.9.12",
+    "@types/node": "^22.9.0",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.5.4",
+    "vite": "^6.0.11",
+    "vitest": "^2.1.8"
+  }
+}
