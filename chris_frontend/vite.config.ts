@@ -24,13 +24,17 @@ export default defineConfig(({ mode }) => {
       // Bind to all interfaces so the Kavia preview reverse proxy can reach the dev server.
       host: true,
       port,
-      strictPort: true
+      strictPort: true,
+      // Allow the Kavia preview hostname through Vite's host check.
+      allowedHosts: ["vscode-internal-26325-beta.beta01.cloud.kavia.ai"]
     },
     preview: {
       // Also bind preview server to all interfaces for `vite preview`.
       host: true,
       port,
-      strictPort: true
+      strictPort: true,
+      // Mirror allowedHosts for `vite preview` as well.
+      allowedHosts: ["vscode-internal-26325-beta.beta01.cloud.kavia.ai"]
     },
     test: {
       environment: "jsdom",
