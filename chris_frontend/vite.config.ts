@@ -21,6 +21,14 @@ export default defineConfig(({ mode }) => {
     // IMPORTANT: Expose REACT_APP_* to client code (we keep your existing .env as-is).
     envPrefix: ["VITE_", "REACT_APP_"],
     server: {
+      // Bind to all interfaces so the Kavia preview reverse proxy can reach the dev server.
+      host: true,
+      port,
+      strictPort: true
+    },
+    preview: {
+      // Also bind preview server to all interfaces for `vite preview`.
+      host: true,
       port,
       strictPort: true
     },
